@@ -110,57 +110,7 @@ Instructions for running `pgAdmin` in a Docker container:
 [pgAdmin 4 (Container)](https://www.pgadmin.org/download/pgadmin-4-container/)
 
 ```bash
-# run postgres container, if not already running
-docker run --rm -it \
-    -e POSTGRES_USER="root" \
-    -e POSTGRES_PASSWORD="root" \
-    -e POSTGRES_DB="ny_taxi" \
-    -v $(realpath ./ny_taxi_postgres_data):/var/lib/postgresql/data \
-    -p 5432:5432 \
-    --name pg-database \
-    postgres:16
-
-docker run --rm -it \
-    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
-    -e PGADMIN_DEFAULT_PASSWORD="root" \
-    -p "8080:80" \
-    --name pgadmin \
-    dpage/pgadmin4:8.2
-
-```
-In GitHub Codespaces the port `8080` has to get added manually `PORTS` tab to the forwarded Ports.  After that I was able to click on the link in the field `Forwarded Address` of the `PORTS` tab.
-
-Getting error when logging in to `pgAdmin`:
-```bash
-CSRFError: 400 Bad Request: The referrer does not match the host.
-```
-https://github.com/pgadmin-org/pgadmin4/issues/5432
-
-
-- setting `PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION="False"` did not help
-- setting `PGADMIN_CONFIG_WTF_CSRF_ENABLED="False"` did help, but it not recommended
-
-<!-- docker run --rm -it \
-    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
-    -e PGADMIN_DEFAULT_PASSWORD="root" \
-    -p "8080:80" \
-    -v $(realpath ./pgadmin4/config.py):/pgamdin4/config.py \
-    -v $(realpath ./pgadmin4/pgadmin.conf):/etc/nginx/conf.d/gpadmin.conf \
-    --name pgadmin \
-    dpage/pgadmin4:8.2 -->
-
-```bash
-docker run --rm -it \
-    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
-    -e PGADMIN_DEFAULT_PASSWORD="root" \
-    -e PGADMIN_CONFIG_WTF_CSRF_ENABLED="False" \
-    -p "8080:80" \
-    --name pgadmin \
-    dpage/pgadmin4:8.2 
-
-```
-<!-- ```bash
-#create network
+# create network
 docker network create pg-network
 
 # run postgres container, if not already running
@@ -170,19 +120,66 @@ docker run --rm -it \
     -e POSTGRES_DB="ny_taxi" \
     -v $(realpath ./ny_taxi_postgres_data):/var/lib/postgresql/data \
     -p 5432:5432 \
-    --network=pg-network \
     --name pg-database \
+    --network=pg-network \
     postgres:16
 
 docker run --rm -it \
     -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
     -e PGADMIN_DEFAULT_PASSWORD="root" \
-    -p 8080:80 \
-    --network=pg-network \
+    -p "8080:80" \
     --name pgadmin \
-    dpage/pgadmin4
+    --network=pg-network \
+    dpage/pgadmin4:8.2
 
+```
+
+<!-- In GitHub Codespaces the port `8080` has to get added manually `PORTS` tab to the forwarded Ports.  After that I was able to click on the link in the field `Forwarded Address` of the `PORTS` tab.
+
+Getting error when logging in to `pgAdmin`:
+```bash
+CSRFError: 400 Bad Request: The referrer does not match the host.
+```
+
+https://github.com/pgadmin-org/pgadmin4/issues/5432
+
+
+- setting `PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION="False"` did not help
+- setting `PGADMIN_CONFIG_WTF_CSRF_ENABLED="False"` did help, but it not recommended
+
+```bash
+docker run --rm -it \
+    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+    -e PGADMIN_DEFAULT_PASSWORD="root" \
+    -e PGADMIN_CONFIG_WTF_CSRF_ENABLED="False" \
+    -p "8080:80" \
+    --name pgadmin \
+    --network=pg-network \
+    dpage/pgadmin4:8.2 
 ``` -->
+
+### Connecting pgAdmin to database
+
+Open `pgAdmin` in browser [http://127.0.0.1:8080](http://127.0.0.1:8080).
+
+Right click on `Servers` and select `Servers > Register > Server`
+- General
+    - Name: "Docker localhost"
+- Connection (*Fill in data from Docker Postgres container*)
+    - Host name/address: "pg-database"
+    - Port: "5432"
+    - Username: "root"
+    - Passwort: "root"
+
+## Convert notebook to script
+
+```bash
+jupyter nbconvert --to=script upload_data.ipynb 
+```
+
+The clean up the notebook.
+
+
 
 
 
