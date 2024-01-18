@@ -177,8 +177,27 @@ Right click on `Servers` and select `Servers > Register > Server`
 jupyter nbconvert --to=script upload_data.ipynb 
 ```
 
-The clean up the notebook.
+The clean up the notebook and rename it to [ingest_data.py](ingest_data.py).
 
+Before testing the script drop the existing table in the database.
+
+```sql
+DROP TABLE IF EXISTS yellow_taxi_data;
+```
+
+
+```bash
+python ingest_data.py \
+    --user root \
+    --password root \
+    --host localhost \
+    --port 5432 \
+    --database ny_taxi \
+    --table yellow_taxi_data \
+    --url https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz \
+    --compression gzip \
+    --chunksize 10000
+```
 
 
 
