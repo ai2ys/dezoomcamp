@@ -1,5 +1,6 @@
 version: '3.9'
-network:
+
+networks:
   pg-network:
     driver: bridge
 
@@ -17,13 +18,23 @@ services:
       - 5432:5432
     networks:
       - pg-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "root", "-d", "ny_taxi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # healthcheck:
+    #   test: ["CMD", "pg_isready", "-h", "postgres", "-p", "5432", "-U", "root"]
     image: dpage/pgadmin4:8.2
     container_name: pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL="admin@admin.com"
-      - PGADMIN_DEFAULT_PASSWORD="root"
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
     ports:
       - 8080:80
     networks: 
