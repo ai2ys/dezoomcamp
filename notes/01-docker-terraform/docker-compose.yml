@@ -39,3 +39,36 @@ services:
       - 8080:80
     networks: 
       - pg-network
+  
+  ingest_data:
+    image: taxi_ingest:0.0.0
+    hostname: ingest_data
+    container_name: ingest_data
+    command: [
+      /bin/bash,
+      -c,
+      python /app/ingest_data.py 
+      --user root
+      --password root
+      --host postgres
+      --port 5432
+      --database ny_taxi
+      --table yellow_taxi_data
+      --url $URL
+      --compression gzip
+      --chunksize 10000
+      ]
+    build: 
+      context: ./ingest_data
+      dockerfile: dockerfile
+    depends_on:
+      - postgres
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      URL:
+    networks:
+      - pg-network
+    deploy:
+      # mode: replicated
+      replicas: 0 

@@ -8,6 +8,8 @@ The following can be executed using :octocat: GitHub Codespaces, the benefits ar
 
 🐧 All instructions are for Linux based systems.
 
+The commands assume that GitHub Codespaces is used and accessed from your local VS Code.
+
 ## Start container with postgres
 
 Starting the Postgres container running the following commands in the terminal.
@@ -177,7 +179,7 @@ Right click on `Servers` and select `Servers > Register > Server`
 jupyter nbconvert --to=script upload_data.ipynb 
 ```
 
-The clean up the notebook and rename it to [ingest_data.py](ingest_data.py).
+The clean up the notebook and rename it to [ingest_data.py](ingest_data.py). Later move it to a folder called [`ingest_data`](ingest_data).
 
 Before testing the script drop the existing table in the database.
 
@@ -185,9 +187,10 @@ Before testing the script drop the existing table in the database.
 DROP TABLE IF EXISTS yellow_taxi_data;
 ```
 
+Run script locally
 
 ```bash
-python ingest_data.py \
+python ./ingest_data/ingest_data.py \
     --user root \
     --password root \
     --host localhost \
@@ -199,6 +202,32 @@ python ingest_data.py \
     --chunksize 10000
 ```
 
+Use Docker container for running the script
+
+```bash
+docker compose build
+docker compose run --rm ingest_data
+# optional, in case of shutting down the containers
+docker compose down
+```
+
+Use http server for downloading dataset from local machine to Docker container
+
+```bash
+# terminal 1
+python -m http.server 8000
+```
+
+```bash
+## terminal 2
+# "host.docker.internal" is the hostname that resolves to the internal IP address used by the host, for remote systems ifconfig has to be used to get the IP address
+
+URL=http://host.docker.internal:8000/yellow_tripdata_2021-01.csv.gz \
+docker compose run --rm ingest_data
+```
+
+
+<!-- TODO make pgadmin persistent... mount volume for "/var/lib/pgadmin" -->
 
 
 

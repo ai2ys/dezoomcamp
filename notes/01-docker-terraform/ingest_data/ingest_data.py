@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import engine
 from sqlalchemy import text
-from IPython.display import display
+# from IPython.display import display
 import argparse
 
 
@@ -23,7 +23,9 @@ def main(args):
     compression = args.compression
     chunksize = args.chunksize
 
-    engine = create_engine(f'postgresql://{username}:{password}@{host}:{port}/{database}')
+    engine_param = f'postgresql://{username}:{password}@{host}:{port}/{database}'
+    print(engine_param)
+    engine = create_engine(engine_param)
 
     datetime_columns = [
         'tpep_pickup_datetime',
