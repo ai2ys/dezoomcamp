@@ -1,9 +1,5 @@
 version: '3.9'
 
-networks:
-  pg-network:
-    driver: bridge
-
 services:
   postgres:
     image: postgres:16
@@ -74,3 +70,22 @@ services:
     deploy:
       # mode: replicated
       replicas: 0 
+
+  pgcli:
+    image: ai2ys/dockerized-pgcli:4.0.1
+    container_name: pgcli
+    depends_on:
+      - postgres
+    networks:
+      - pg-network
+    entrypoint: /bin/bash
+    command: [-c, pgcli -h pg-database -p 5432 -U root -d ny_taxi]
+    deploy:
+      # mode: replicated
+      replicas: 0
+    # tty: true
+    # stdin_open: true
+
+networks:
+  pg-network:
+    driver: bridge

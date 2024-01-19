@@ -250,6 +250,32 @@ Mount folder to contaner directory `/var/lib/pgadmin` by adding the following to
 sudo chown -R 5050:5050 pgadmin_data
 ```
 
+## `pgcli` running in Docker container
+
+```bash
+$ docker run -it --rm --network pg-network ai2ys/dockerized-pgcli:4.0.1 
+175dd47cda07:/# pgcli -h pg-database -U root -p 5432 -d ny_taxi
+Password for root: 
+Server: PostgreSQL 16.1 (Debian 16.1-1.pgdg120+1)
+Version: 4.0.1
+Home: http://pgcli.com
+root@pg-database:ny_taxi> \dt
++--------+------------------+-------+-------+
+| Schema | Name             | Type  | Owner |
+|--------+------------------+-------+-------|
+| public | yellow_taxi_data | table | root  |
++--------+------------------+-------+-------+
+SELECT 1
+Time: 0.009s
+root@pg-database:ny_taxi>
+```
+
+Added `pgcli` service to [`docker-compose.yml`](docker-compose.yml). Will automatically connect to the database.
+
+```bash
+docker compose run --rm pgcli
+```
+
 
 ## Trouble shooting with postgres container
 https://stackoverflow.com/questions/56188573/permission-issue-with-postgresql-in-docker-container
