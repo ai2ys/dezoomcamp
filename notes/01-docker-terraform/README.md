@@ -226,8 +226,33 @@ URL=http://host.docker.internal:8000/yellow_tripdata_2021-01.csv.gz \
 docker compose run --rm ingest_data
 ```
 
+## pgAdmin - persistency of configuration
 
-<!-- TODO make pgadmin persistent... mount volume for "/var/lib/pgadmin" -->
+:information_source: 
+https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html
+
+* In case of issues with mounting a config folder check section "Mapped Files and Directories".
+
+Create folder to be mapped to `/var/lib/pgadmin` in the container.
+
+```bash
+mkdir -p pgadmin_data
+```
+
+Mount folder to contaner directory `/var/lib/pgadmin` by adding the following to the `docker-compose.yml` file.
+
+```yaml
+    volumes:
+      - ./pgadmin_data:/var/lib/pgadmin
+``` 
+
+```bash
+sudo chown -R 5050:5050 pgadmin_data
+```
+
+
+## Trouble shooting with postgres container
+https://stackoverflow.com/questions/56188573/permission-issue-with-postgresql-in-docker-container
 
 
 
