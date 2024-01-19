@@ -255,5 +255,7 @@ sudo chown -R 5050:5050 pgadmin_data
 https://stackoverflow.com/questions/56188573/permission-issue-with-postgresql-in-docker-container
 
 
+https://hub.docker.com/_/postgres, section
+"Arbitrary --user Notes"
 
 
