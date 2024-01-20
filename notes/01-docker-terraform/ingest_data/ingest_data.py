@@ -11,6 +11,8 @@ from sqlalchemy import text
 # from IPython.display import display
 import argparse
 
+import sys
+
 
 def main(args):
     username = args.user
@@ -32,23 +34,28 @@ def main(args):
         'tpep_dropoff_datetime',
     ]
 
-    df_empty = pd.read_csv(
-        url, 
-        compression='gzip', 
-        parse_dates=datetime_columns, 
-        nrows=0)
-    df_empty.to_sql(name='yellow_taxi_data', con=engine, if_exists='replace')
-
-    # Query the first 5 rows (should be empty)
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT * FROM yellow_taxi_data")).fetchall()
-        print("\nFirst 5 Rows:")
-        print(result)
-
+    
 
     # reset the iterator
-    df_chunks = pd.read_csv(url, compression='gzip', parse_dates=datetime_columns, chunksize=1e5)
+    df_chunks = pd.read_csv(url, compression=compression, parse_dates=datetime_columns, chunksize=chunksize)
     for i, chunk in enumerate(df_chunks):
+        if i == 0:
+            chunk.head(0).to_sql(name='yellow_taxi_data', con=engine, if_exists='replace') 
+            # Query the first 5 rows (should be empty)
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT * FROM yellow_taxi_data")).fetchall()
+                print("\nFirst 5 Rows:")
+                print(result)
+
+                print("\nData Types:")
+                result= conn.execute(text(
+                    """SELECT DATA_TYPE
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'yellow_taxi_data'
+                    AND COLUMN_NAME = 'tpep_pickup_datetime';""")).fetchall()
+                print(result)
+
+    
         t_start = time()
         chunk.to_sql(name='yellow_taxi_data', con=engine, if_exists='append')
         t_end = time()
