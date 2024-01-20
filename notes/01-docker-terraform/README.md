@@ -80,6 +80,9 @@ Time: 0.006s
 ```
 
 ## Downloading the dataset
+The dataset used is the TLC Trip Record Data from the New York City Taxi & Limousine Commission. 
+
+https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 Downloading and unzipping the dataset.
 
@@ -285,3 +288,253 @@ https://hub.docker.com/_/postgres, section
 "Arbitrary --user Notes"
 
 
+---
+
+# SQL Refresher
+
+Downloading the zones lookup table and ingesting it into the database.
+
+https://d37ci6vzurychx.cloudfront.net/misc/taxi+_zone_lookup.csv
+
+Ingest zones to database
+
+```bash
+docker compose run --rm ingest_data_misc "python ingest_zones.py \
+    --user root \
+    --password root \
+    --host postgres \
+    --port 5432 \
+    --database ny_taxi \
+    --table taxi_zones \
+    --url https://d37ci6vzurychx.cloudfront.net/misc/taxi+_zone_lookup.csv \
+    --chunksize 10000"
+```
+
+## SQL queries
+
+Select all rows from table `zones`.
+```sql
+SELECT
+	*
+FROM
+	zones;
+```
+
+Select 10 rows from table `yellow_taxi_data`.
+```sql
+SELECT
+	*
+FROM
+	yellow_taxi_data
+LIMIT 10;
+```
+
+Displaying location string instead of location id.
+
+```sql
+SELECT
+	*
+FROM
+    yellow_taxi_data t, 
+	zones z
+WHERE
+	t."PULocationID" = z."LocationID" AND
+	t."DOLocationID" = z."LocationID"
+LIMIT 10;
+```
+
+Resulting in error:
+
+```basERROR:  operator does not exist: text = bigint
+LINE 7:  t."PULocationID" = z."LocationID" AND
+                          ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts. 
+
+SQL state: 42883
+Character: 74
+```
+
+Check for datatypes of columns `PULocationID` and `LocationID`.
+
+```sql	
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'yellow_taxi_data' AND column_name = 'PULocationID';
+```
+
+Add information for both tables into one query.
+
+```sql
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'zones' AND column_name = 'LocationID'
+UNION ALL
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'yellow_taxi_data' AND column_name = 'PULocationID';
+```
+Result
+```text
+column_name     | data_type
+----------------+-----------
+"LocationID"	"bigint"
+"PULocationID"	"text"
+```
+
+Cast `PULocationID` to `bigint` in the query.
+
+```sql
+SELECT
+    *
+FROM
+    yellow_taxi_data t, 
+    zones zpu,
+    zones zdo
+WHERE
+    t."PULocationID"::bigint = zpu."LocationID" AND
+    t."DOLocationID"::bigint = zdo."LocationID"
+LIMIT 10;
+```
+The result has a lot of columns, therefore only a few are selected.
+
+
+The following query is equivalent to the one above, but only a few columns are selected.
+Where the pickup and dropoff location are joined with the zones table. Additionally the columns `Borough` and `Zone` are concatenated.
+
+```sql
+SELECT
+    tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	CONCAT(zpu."Borough", zpu."Zone") AS "pu_loc",
+	CONCAT(zdo."Borough", zdo."Zone") AS "do_loc"
+FROM
+    yellow_taxi_data t, 
+    zones zpu,
+	zones zdo
+WHERE
+    t."PULocationID"::bigint = zpu."LocationID" AND
+    t."DOLocationID"::bigint = zdo."LocationID"
+LIMIT 10;
+```
+
+Other kind of getting the same result. 
+
+```sql
+SELECT
+    tpep_pickup_datetime,
+	tpep_dropoff_datetime,
+	total_amount,
+	/* concat column values */
+	CONCAT(zpu."Borough", ' - ', zpu."Zone") AS "pu_loc",
+	CONCAT(zdo."Borough", ' - ', zdo."Zone") AS "do_loc"
+FROM
+	/* join tables */
+    yellow_taxi_data t 
+	JOIN zones zpu
+		ON t."PULocationID"::bigint = zpu."LocationID"
+	JOIN zones zdo
+		ON t."DOLocationID"::bigint = zdo."LocationID"
+LIMIT 10;
+
+```
+The difference is that the `WHERE` clause is replaced by `JOIN` clauses.
+<!-- 
+List columns that have `NULL` values with the number of `NULL` values.
+
+```sql
+SELECT
+    column_name,
+    data_type,
+    COUNT(*) AS num_null
+FROM
+    information_schema.columns
+WHERE
+    table_name = 'yellow_taxi_data' AND
+    is_nullable = 'YES'
+GROUP BY
+    column_name,
+    data_type   
+ORDER BY
+    num_null DESC;
+```
+
+This query seems to have some flaws -->
+
+
+Truncate (remove) time of `tpep_pickup_datetime` and `tpep_dropoff_datetime` columns.
+
+```sql
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+--    /* truncate/remove time */
+    DATE_TRUNC('day', tpep_pickup_datetime),
+    total_amount
+FROM
+    yellow_taxi_data t
+LIMIT 10;
+```
+
+```sql
+SELECT DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'yellow_taxi_data'
+AND COLUMN_NAME = 'tpep_pickup_datetime';
+```
+
+```sql
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+--    /* cast as date */
+    CAST(tpep_pickup_datetime AS DATE),
+    total_amount
+FROM
+    yellow_taxi_data t
+LIMIT 10;
+```
+
+Check how many entries have the same day
+```sql
+SELECT
+    CAST(tpep_pickup_datetime AS DATE) as "day",
+    COUNT(*)
+FROM
+    yellow_taxi_data t
+GROUP BY
+    CAST(tpep_pickup_datetime AS DATE)
+ORDER BY
+    "day" ASC;
+```
+
+Order by count
+```sql
+SELECT
+    CAST(tpep_pickup_datetime AS DATE) as "day",
+    COUNT(*) as "count"
+FROM
+    yellow_taxi_data t
+GROUP BY
+    CAST(tpep_pickup_datetime AS DATE)
+ORDER BY
+    "count" DESC;
+```
+
+Maximum total amount per day
+```sql
+SELECT
+    CAST(tpep_pickup_datetime AS DATE) as "day",
+    COUNT(*) as "count",
+	MAX(total_amount) as "max"
+FROM
+    yellow_taxi_data t
+GROUP BY
+    CAST(tpep_pickup_datetime AS DATE)
+ORDER BY
+    "max" DESC;
+```
+
+---
+
+# Terraform

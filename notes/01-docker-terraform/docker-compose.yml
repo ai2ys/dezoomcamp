@@ -71,6 +71,25 @@ services:
       # mode: replicated
       replicas: 0 
 
+  ingest_data_misc:
+    image: taxi_ingest:0.0.0
+    hostname: ingest_data_misc
+    container_name: ingest_data_misc
+    build: 
+      context: ./ingest_data_misc
+      dockerfile: dockerfile
+    entrypoint: [/bin/bash, -c]
+    working_dir: /app
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+    networks:
+      - pg-network
+    deploy:
+      # mode: replicated
+      replicas: 0 
+
   pgcli:
     image: ai2ys/dockerized-pgcli:4.0.1
     container_name: pgcli
