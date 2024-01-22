@@ -1,0 +1,16 @@
+FROM python:3.11-slim-bookworm
+
+RUN apt-get update && apt-get install -y \
+    wget=1.21.3-1+b2 \
+    libpq-dev=15.5-0+deb12u1 \
+    build-essential=12.9 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip==23.3.2
+RUN pip install --no-cache-dir \
+    pandas==2.1.4 \
+    sqlalchemy==2.0.25 \
+    psycopg2==2.9.9
+
+WORKDIR /app
+
