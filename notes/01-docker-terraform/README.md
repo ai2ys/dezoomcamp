@@ -1,3 +1,8 @@
+# Information
+
+Crourse notes from course peer of previous cohort:
+https://github.com/ziritrion/dataeng-zoomcamp/blob/main/notes/1_intro.md
+
 # Docker + Postgres
 The following can be executed using :octocat: GitHub Codespaces, the benefits are that the following tools are pre-installed:
 
@@ -538,3 +543,53 @@ ORDER BY
 ---
 
 # Terraform
+
+❓ Why Terraform is useful
+- Simplicity in keeping track of infrastructure
+- Easier collaboration
+- Reproducibility
+- Ensure resources are removed
+
+❗What Terraform is not
+- No management or updating of code on infrastructure
+- No ability to change immutable resources
+- No management of resources defined outside of Terraform files
+
+ℹ️ Terraform is
+Infrastructure as Code (IaC)
+- "Make resources with code files"
+
+## Introduction to Terraform
+
+
+List of Terraform providers:
+https://registry.terraform.io/browse/providers
+
+
+Terraform will connect to the cloud provider chosen.
+
+- Local Machine
+    - Terraform
+- Cloud Provider
+    - AWS
+    - Azure
+    - GCP
+    - ...
+
+Authorization is needed for Terraform to connect to the cloud provider.
+
+### Key Terraform commands
+
+- `Init` - get me providers I need
+- `Plan` - what am I about to do
+    - Show me the resources that will get created
+- `Apply` - Do what is in the `*.tf` files
+- `Destroy` - Destroy all resources defined in the `*.tf` files
+
+### Setup service account on GCP
+
+Service accounts are never meant to login to.
+
+### Terraform on local PC
+
+
