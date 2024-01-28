@@ -603,16 +603,54 @@ Configuring instance
     bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
     rm -rf ~/miniconda3/miniconda.sh    
     # init
-    ~/miniconda3/bin/conda init bash    
+    ~/miniconda3/bin/conda init bash
+    # without logout
+    source ~/.bashrc
     ```
 - Install Docker (?apt-get install docker.io)
-- ...
+    ```bash
+    sudo su
+    # Add Docker's official GPG key:
+    apt-get update
+    apt-get install ca-certificates curl
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+
+    # Add the repository to Apt sources:
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+
+    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    # check installation
+    docker run --rm hello-world
+    groupadd docker
+    # exit su
+    exit
+
+    # add standard user to docker group 
+    sudo usermod -aG docker $USER
+    # logout/login required or reboot in case of VM
+    docker run --rm hello-world
+    ```
+- JupyterLab
+    ```bash
+    pip install jupyterlab
+    ```
+- Terraform
+    ```bash
+    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+    sudo apt update && sudo apt install terraform
+    ```
 
 ---
 
-## Local PC
-
-### Creating SSH config file on local PC for GCP
+## Creating SSH config file on local PC for GCP
 ```bash
 touch ~/.ssh/config
 ```
@@ -630,14 +668,88 @@ Connect using the SSH config file
 ssh dezoomcamp-gcp
 ```
 
-### Accessing GCP in VSCode
+## Accessing GCP in VSCode
 
 Install extensions
 - Remote - SSH
 - Remote - Containers
-- 
-- 
- 
+
+## Port forwarding from GCP to local machine
+
+VSCode window connected to GCP via SSH (see indicator at the bottom left in VSCode window).
+From the Ports tab select `Forward a Port` and enter port number.
+
+## Setup GCP service account
+Explained in other video (https://youtu.be/Y2ux7gq3Z0o?feature=shared).
+
+Select `Navigation menu > IAM & Admin > Service Accounts` then click on `+ Create Service Account`.
+
+1. Service account details
+    - Set service account name: "terraform-runner"
+    - Click `Create and Continue`.
+
+2. Select role
+    - `Cloud Storage > Storage Admin`
+    - `+ Add another role`
+        - `BigQuery > BigQuery Admin`
+    - `+ dd another role`
+        - ``
+
+Click `Continue` and `Done`.
+
+Click '...' (vertical dots) on account and select `Manage keys`.
+
+- Click `Add Key > Create new key` and select `JSON`.
+
+The JSON key file gets downloaded (and must never be shared!!!).
+
+Moving it to the user directory in WSL2.
+
+```bash
+mv /mnt/c/<username>/Downloads/<key file>.json ~/my-creds.jsom
+chmod 600 my-creds.json
+```
+
+Update service account with new permissions. Click `IAM` then go to service account and click edit (🖊️.) 
+
+
+Install VSCode extension for Terraform.
+
+## Transfer service account credentials
+
+Transfering JSON file using `sftp`.
+
+```bash
+# connect to gcp VM
+sftp dezoomcamp-gcp
+# make directory
+mkdir .gc
+cd .gc
+put my-creds.json ny-rides.json
+```
+
+Configure Google Cloud `cli`.
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=~/.gc/ny-rides.json
+gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+```
+
+The section below could not be executed at the current stage. In case the directory contains Terraform files (*.tf).
+
+Run `terraform init` and after that `terraform plan` and than `terraform apply`.
+
+## Shutdown GCP VM
+
+From terminal
+
+```bash
+sudo shutdown now
+```
+
+From GCP dashboard select `Compute Engine > VM instances` select the `...` (vertical dots) on the instance and select `Stop`.
+
+
 
 ---
 
@@ -688,6 +800,8 @@ Authorization is needed for Terraform to connect to the cloud provider.
 ### Setup service account on GCP
 
 Service accounts are never meant to login to.
+
+
 
 ### Terraform on local PC
 
