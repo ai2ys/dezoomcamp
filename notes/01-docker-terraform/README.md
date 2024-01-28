@@ -542,6 +542,105 @@ ORDER BY
 
 ---
 
+# GCP setup
+
+🎞️ https://youtu.be/ae-CV2KfoN0?feature=shared
+
+Select from the menu `Navigation menu > Compute Engine > VM instances`. Currently no instances are running.
+
+Create SSH key pair to be able to connect.
+Instructions using e.g. Git Bash on Windows.
+
+Documentation from GCP
+- https://cloud.google.com/compute/docs/connect/create-ssh-keys
+- https://cloud.google.com/compute/docs/connect/add-ssh-keys
+- https://cloud.google.com/compute/docs/connect/restrict-ssh-keys
+- https://cloud.google.com/compute/docs/connect/standard-ssh#provide-key
+
+```bash
+cd ~/.ssh
+ssh-keygen -t rsa -f ~/.ssh/KEY_FILENAME -C USERNAME -b 2048
+# output of public key
+cat ~/.ssh/KEY_FILENAME
+# copy public key to clipboard
+```
+
+Add **public** (*.pub) key to GCP, from the navigation menu select `Metadata > SSH Keys > Edit > Add SSH key` or `+ ADD ITEM`, if a key has already been added earlier.
+
+From navigation menu select `Compute Engine > VM instances` then select from the `VM instances` menu bar `CREATE INSTANCE` (might be hidden behind `...`).
+
+Specify
+- Name
+- Region
+- Zone
+- Machine type (e.g. e2-standard-4, 4 CPUs, 16GB RAM)
+Estimation of cost per month and hour.
+
+Boot disk section > Public Images
+- Operating system (Ubuntu)
+- Version
+- Boot disk type (unchanged, balanced persistent disk)
+- Size (30 GB)
+
+
+Creation of VM instances via `gcloud` command line tool, instruction can be found in the documentation `Equivalent Command Line`.
+
+Next to this Click on `Create` for creating the instance.
+
+Check `External IP` (use copy button).
+
+```bash	
+ssh -i ~/.ssh/KEY_FILENAME USERNAME@EXTERNAL_IP
+```
+(`CTRL+D` to logout)
+
+Configuring instance
+- Install Miniconda (including init)
+    ```bash
+    mkdir -p ~/miniconda3
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+        -O ~/miniconda3/miniconda.sh
+    bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    rm -rf ~/miniconda3/miniconda.sh    
+    # init
+    ~/miniconda3/bin/conda init bash    
+    ```
+- Install Docker (?apt-get install docker.io)
+- ...
+
+---
+
+## Local PC
+
+### Creating SSH config file on local PC for GCP
+```bash
+touch ~/.ssh/config
+```
+
+File content
+```text
+Host dezoomcamp-gcp
+    HostName EXTERNAL_IP
+    User USERNAME
+    IdentityFile ~/.ssh/KEY_FILENAME
+```
+
+Connect using the SSH config file
+```bash
+ssh dezoomcamp-gcp
+```
+
+### Accessing GCP in VSCode
+
+Install extensions
+- Remote - SSH
+- Remote - Containers
+- 
+- 
+ 
+
+---
+
 # Terraform
 
 ❓ Why Terraform is useful
