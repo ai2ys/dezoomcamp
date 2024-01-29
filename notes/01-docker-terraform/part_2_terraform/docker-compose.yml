@@ -1,0 +1,49 @@
+version: '3.9'
+
+x-shared-gcloud: &shared-gcloud
+  # https://hub.docker.com/r/google/cloud-sdk
+  image: google/cloud-sdk:slim
+  environment:
+    CLOUDSDK_CONFIG: /config/mygcloud
+
+  
+
+
+services:
+  terraform:
+    container_name: terraform
+    hostname: terraform
+    # https://hub.docker.com/r/hashicorp/terraform
+    image: hashicorp/terraform:1.7.1
+    volumes:
+      - .:/terraform
+      - gcloud-config:/config/mygcloud 
+    environment:
+      GOOGLE_CREDENTIALS: /config/mygcloud/application_default_credentials.json
+
+    working_dir: /terraform
+    entrypoint: terraform
+
+  gcloud-config:
+    container_name: gcloud-config
+    hostname: gcloud-config
+    <<: *shared-gcloud
+    volumes:
+     - gcloud-config:/config/mygcloud
+    command: gcloud auth application-default login
+    tty: true
+
+  gcloud:
+    # depends_on:
+    #   - gcloud-config
+    container_name: gcloud
+    hostname: gcloud
+    <<: *shared-gcloud
+    volumes:
+      - gcloud-config:/config/mygcloud
+      - .:/terraform
+    working_dir: /terraform
+
+volumes:
+  gcloud-config:
+
