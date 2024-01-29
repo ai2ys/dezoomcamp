@@ -680,7 +680,7 @@ VSCode window connected to GCP via SSH (see indicator at the bottom left in VSCo
 From the Ports tab select `Forward a Port` and enter port number.
 
 ## Setup GCP service account
-Explained in other video (https://youtu.be/Y2ux7gq3Z0o?feature=shared).
+Explained in other video :film_strip:[DE Zoomcamp 1.3.2 - Terraform Basics](https://youtu.be/Y2ux7gq3Z0o?feature=shared).
 
 Select `Navigation menu > IAM & Admin > Service Accounts` then click on `+ Create Service Account`.
 
@@ -749,6 +749,20 @@ sudo shutdown now
 
 From GCP dashboard select `Compute Engine > VM instances` select the `...` (vertical dots) on the instance and select `Stop`.
 
+## Starting existing GCP VM
+
+From GCP dashboard select `Compute Engine > VM instances` select the `...` (vertical dots) on the instance and select `Start/Resume`.
+After that the `HostName` to get updated in `~/.ssh/config` file to the new `EXTERNAL_IP`.
+
+## Delete GCP VM
+
+From GCP dashboard select `Compute Engine > VM instances` select the `...` (vertical dots) on the instance and select `Delete`.
+
+> ⚠️ This action cannot be undone and will delete the VM instance and all its contents (data).
+
+## General information about GCP charges
+
+When the VM instance is stopped, the VM instance is not charged, but the storage is still charged.
 
 
 ---
@@ -772,6 +786,9 @@ Infrastructure as Code (IaC)
 
 ## Introduction to Terraform
 
+🎞️ [DE Zoomcamp 1.3.1 - Terraform Primer](https://youtu.be/s2bOYDCKl_M?feature=shared)
+
+🎞️ [DE Zoomcamp 1.3.2 - Terraform Basics](https://youtu.be/Y2ux7gq3Z0o?feature=shared)
 
 List of Terraform providers:
 https://registry.terraform.io/browse/providers
@@ -789,7 +806,7 @@ Terraform will connect to the cloud provider chosen.
 
 Authorization is needed for Terraform to connect to the cloud provider.
 
-### Key Terraform commands
+## Key Terraform commands
 
 - `Init` - get me providers I need
 - `Plan` - what am I about to do
@@ -797,12 +814,186 @@ Authorization is needed for Terraform to connect to the cloud provider.
 - `Apply` - Do what is in the `*.tf` files
 - `Destroy` - Destroy all resources defined in the `*.tf` files
 
-### Setup service account on GCP
+## Setup service account on GCP
 
-Service accounts are never meant to login to.
+Service accounts are never meant to login to. See previous section on how to set it up.
+
+## Terraform in VSCode
+
+Install Terraform extension from HashiCorp for syntax highlighting and auto completion.
+
+## Terraform files
+
+Create `main.tf` for "terraform google provider" (search using Google).
+
+https://registry.terraform.io/providers/hashicorp/google/latest/docs
+
+Check button top left `USE Provider 🔽` and copy code.
 
 
+```terraform	
+terraform {
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+      version = "5.14.0"
+    }
+  }
+}
 
-### Terraform on local PC
+provider "google" {
+  # Configuration options
+}
+```
 
+Configuraton options can be found in the documentation, like.
+```terraform
+# typical provider configuration
+provider "google" {
+  project     = "my-project-id"
+  region      = "us-central1"
+}	
+```
+
+After inserting it will look like this.
+
+```terraform	
+terraform {
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+      version = "5.14.0"
+    }
+  }
+}
+
+provider "google" {
+  project     = "my-project-id"
+  region      = "us-central1"
+}
+```
+
+Usefull command from command line is `terraform fmt` to format the `*.tf` files.
+
+Running from container (see [`./part_2_terraform/docker-compose.yml`](./part_2_terraform/docker-compose.yml) run `docker compose run --rm terraform fmt`.
+
+
+Copy project ID from GCP dashboard. Select `Navigation menu > Cloud overview > Dashboard`. Select the project form the dropdown menu. Copy the project ID to the `main.tf` file instead of the placeholder `my-project-id`.
+
+Add `credentials` to `main.tf` file, by adding the following lines.
+
+```terraform
+provider "google" {
+  project     = "my-project-id"
+  region      = "us-central1"
+  credentials = "<path to credentials JSON file>"
+}
+```
+
+Alternatively the credentials can be set as environment variable `GOOGLE_CREDENTIALS`.
+```bash
+export GOOGLE_CREDENTIALS=<path to credentials JSON file>
+``` 
+export GOOGLE_APPLICATION_CREDENTIALS={{path}}
+
+Another option is to use the `gcloud` command line tool.
+
+```bash
+# storing credentials in environment variable
+gcloud auth application-default login
+# or storing credentials in db
+gcloud auth login
+```
+
+Here using the provided [`./part_2_terraform/docker-compose.yml`](./part_2_terraform/docker-compose.yml) file.
+
+```bash
+docker compose run --rm gcloud-config
+# after that has successfully run
+docker compose run --rm gcloud gcloud auth list
+```
+
+
+## Terraform init
+
+The `init` command will get the provider and initialize the working directory.
+
+
+```bash
+# run from local machine
+terraform init
+```
+
+```bash
+# run from container
+docker compose run --rm terraform init
+```
+
+## Terraform - Create GCP Bucket
+
+https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
+
+```terraform
+# Example Usage - Life cycle settings for storage bucket objects
+
+resource "google_storage_bucket" "auto-expire" {
+  name          = "auto-expiring-bucket"
+  location      = "US"
+  force_destroy = true
+
+  lifecycle_rule {
+    condition {
+      age = 3
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  lifecycle_rule {
+    condition {
+      age = 1
+    }
+    action {
+      type = "AbortIncompleteMultipartUpload"
+    }
+  }
+}
+```
+
+After required adaptions.
+- `name` has to be unique across all GCPs buckets
+
+```bash
+terraform plan
+```
+
+```bash
+docker compose run --rm terraform plan
+```
+
+
+Apply Terraform plan
+
+```bash
+terraform apply
+```
+
+```bash
+docker compose run --rm terraform apply
+```
+
+Will create a "state" file `terraform.tfstate` which contains the current state of the infrastructure.
+
+Check the GCP dashboard for the newly created bucket. Select `Navigation menu > Cloud Storage > Buckets` or in the project dashboard select `Storage`.
+
+## Terraform - Destroy GCP Bucket
+
+```bash
+terraform destroy
+```
+
+```bash
+docker compose run --rm terraform destroy
+```
 

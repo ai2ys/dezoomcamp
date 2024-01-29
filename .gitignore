@@ -1,1 +1,6 @@
 notes/01-docker-terraform/pgadmin_data/
+notes/01-docker-terraform/part_2_terraform/.terraform.lock.hcl
+notes/01-docker-terraform/part_2_terraform/terraform.tfstate
+notes/01-docker-terraform/part_2_terraform/terraform.tfstate.backup
+notes/01-docker-terraform/part_2_terraform/.terraform/providers/registry.terraform.io/hashicorp/google/5.14.0/linux_amd64/terraform-provider-google_v5.14.0_x5
+homework/01-docker-terraform/terraform_with_variables/.terraform.lock.hcl
