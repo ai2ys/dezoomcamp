@@ -1,11 +1,5 @@
 version: '3.9'
 
-x-shared-gcloud: &shared-gcloud
-  # https://hub.docker.com/r/google/cloud-sdk
-  image: google/cloud-sdk:slim
-  environment:
-    CLOUDSDK_CONFIG: /config/mygcloud
-
 services:
   terraform:
     container_name: terraform
@@ -18,15 +12,23 @@ services:
     environment:
       GOOGLE_CREDENTIALS: /config/mygcloud/application_default_credentials.json
     entrypoint: terraform
+    deploy:
+      # mode: replicated
+      replicas: 0
 
   gcloud-config:
     container_name: gcloud-config
     hostname: gcloud-config
-    <<: *shared-gcloud
+    image: google/cloud-sdk:slim
+    environment:
+      CLOUDSDK_CONFIG: /config/mygcloud
     volumes:
      - gcloud-config:/config/mygcloud
     command: gcloud auth application-default login
     tty: true
+    deploy:
+      # mode: replicated
+      replicas: 0
 
 
   postgres:
