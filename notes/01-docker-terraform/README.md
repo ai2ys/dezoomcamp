@@ -997,3 +997,44 @@ terraform destroy
 docker compose run --rm terraform destroy
 ```
 
+---
+
+### Terraform variables
+
+Variables can be defined in a `variables.tf` file that will get applied in the `main.tf` file.
+
+https://developer.hashicorp.com/terraform/tutorials/configuration-language/variables
+
+Examples for in a `variables.tf` file.
+
+```terraform
+variable "location" {
+    description = "Project location"
+    default = "US"
+}
+
+variable "bq_dataset_name" {
+    description = "My BigQuery dataset"
+    default = "demo_dataset"
+}
+
+variable "gcs_bucket_name" {
+    description = "My Storage bucket name"
+    default = "demo_bucket"
+}
+
+variable "gcs_storage_class" {
+    description = "Bucket Storage class"
+    default = "STANDARD"
+}
+```
+
+Access in `main.tf` file
+
+```terraform
+resource "google_bigquery_dataset" "demo_dataset" {
+    dataset_id = var.bq_dataset_name
+    location = var.location
+}
+
+```
