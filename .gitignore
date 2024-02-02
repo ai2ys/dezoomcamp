@@ -1,6 +1,9 @@
 notes/01-docker-terraform/pgadmin_data/
 notes/01-docker-terraform/part_2_terraform/.terraform*
 notes/01-docker-terraform/part_2_terraform/*.tfstate*
-notes/01-docker-terraform/part_2_terraform/terraform.tfstate.backup
-notes/01-docker-terraform/part_2_terraform/.terraform/
+notes/01-docker-terraform/part_2_terraform/.terraform*
 homework/01-docker-terraform/terraform_with_variables/.terraform*
+notes/02-workflow-orchestration/mage/.env
+notes/02-workflow-orchestration/mageai/mage_data/
+notes/02-workflow-orchestration/mageai/magic-zoomcamp/
+notes/02-workflow-orchestration/mageai/.env
