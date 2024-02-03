@@ -261,3 +261,110 @@ Test Postgres connection
     SELECT * FROM ny_taxi.yellow_cab_data LIMIT 10;
     ```
 1. Click ▶️ button or `CTRL+Enter` for execution
+
+
+## 2.2.4 - ETL: Configuring GCP
+
+🎞️ https://youtu.be/00LP360iYvE?feature=shared
+
+Configuring GCP (Google Cloud Platform) for Mage
+- Storage
+- BigQuery
+
+
+### Create Google Cloud Storage (GCS) bucket 
+
+1. Enter `google cloud storage` in search field and select `Googgle Storage` &rarr; default view will be `Buckets`
+1. Create new `+ Bucket` called `mage-zoomcamp-<your-name>-<number>` (have to be globally unique)
+1. Check `Location type` (in the video it is not changed, `Multi-region` set to `us`)
+1. Check `Choose a default storage class for you data` (in the video it is not changed, `Standard`)
+1. Check `Choose how to control access to objects` and ensure `Enforce public access prevention on this bucket` is activated (✅ means the bucket will not be publicly accessible) and `Access control` will not be changed (default is `Uniform`)
+1. Click `Create` button to create the bucket
+
+### Create Service Account
+
+Mage uses service accounts to connect to GCP. Service accounts are used to authenticate and authorize the Mage instance to access GCP resources.
+
+1. Enter `service accounts` in search field and select `Service Accounts (IAM & Admin)` &rarr; will open `IAM & Admin` with default view `Service Accounts`
+1. Create new service account `+ Create Service Account`
+1. Enter `Service account details`
+    -  - Enter `Service account details` &rarr; `Service account name` &rarr; `mage-zoomcamp`
+    - Click `Create and continue`
+1. `Grant this service account access to project` 
+    - Set `Select a role` to `Owner` (for the purpose of the video, in a real world scenario this would be different), but actually only BigQuery and GCS are needed
+    - Click `Continue`
+1. `Grant users access to this service account` 
+    - Nothing to change here
+1. Click `Done`
+
+Create a key for the service account
+
+1. Click on the service account `mage-zoomcamp` in the overview of service accounts
+1. Select `Keys` tab
+1. Click `Add Key > Create new key > JSON` and click `Create` &rarr; this will download a JSON file with the key to you local machine
+1. Copy the JSON file into the MAGE project directory
+
+    ```
+    .
+    ├── mage_data
+    ├── magic-zoomcamp
+    ├── .env
+    ├── .gitignore
+    ├── Dockerfile
+    ├── dev.env
+    ├── docker-compose.yml
+    ├── requirements.txt
+    └── <JSON key file>
+    ```
+
+    In the docker-compose file the JSON file is mounted into the container.
+    ```yaml
+    services:
+      magic:
+        ...
+        volumes:
+          - ./:/home/src
+    ```
+    > ⚠️ Credential files will be mounted into the container and Mage will be able to access them, but must never be committed to GitHub. Therefore, the JSON file has to be added to the `.gitignore` file.
+
+1. Open Mage http://localhost:6789
+1. Select `Files` from the sidebar and open `io_config.yml`
+    - Two options to authenticate with GCP
+        - Using the 'JSON payload' (JSON key file content)
+            ```yaml	
+            GOOGLE_SERVICE_ACC_KEY:
+                type: service account
+                project_id: <project-id>
+                private_key_id: <private-key-id>
+                private_key: "---BEGIN PRIVATE KEY---\n<private key>\n---END PRIVATE"
+                ...
+            ```
+        - Using the JSON key file
+            ```yaml
+            GOOGLE_SERVICE_ACC_KEY_FILE: /home/src/<json-key-file>
+            ```
+            Delete first option `GOOGLE_SERVICE_ACC_KEY` and add the second option `GOOGLE_SERVICE_ACC_KEY_FILE` to the `io_config.yml` file.
+    > Remark by the author: I will not add the JSON file to the project directory but store it in my local home directory (restricted read-write access) and mount it into the container adding a line to the `docker-compose.yml` file.
+
+
+### Test access to GCS
+
+#### Test connection to BigQuery
+
+1. Go back to pipeline overview and select `test_config` pipeline
+1. Click `Edit pipeline` from sidebar 
+1. Select `test_postgres` 
+    - Change `Data loader` to `BigQuery` and `Profile` to `default` then click ▶️ run button
+    - Output should look like this
+        ```text
+        BigQuery initialized
+        └─ Opening connection to BigQuery warehouse...DONE
+        ```
+
+#### Test connection to GCS (Google Cloud Storage)
+
+1. Go to `example_pipeline`
+1. Click `Edit pipeline` from sidebar (loads Titanic dataset and it to a file)
+1. Select the exporter `export_titanic_clean` click `...` and select `Execute with all upstream blocks` (this will execute all blocks in the pipeline) this will create a file in the mage project directory this can be uploaded then to GCS
+
+https://youtu.be/00LP360iYvE?list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&t=370
