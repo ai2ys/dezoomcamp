@@ -366,5 +366,131 @@ Create a key for the service account
 1. Go to `example_pipeline`
 1. Click `Edit pipeline` from sidebar (loads Titanic dataset and it to a file)
 1. Select the exporter `export_titanic_clean` click `...` and select `Execute with all upstream blocks` (this will execute all blocks in the pipeline) this will create a file in the mage project directory this can be uploaded then to GCS
+1. Upload the file to GCS 
+    - Go to [console.cloud.google.com](console.cloud.google.com) 
+    - Search for `cloud storage` and select `Buckets`
+    - Select `mage-zoomcamp-<your-name>-<number>` bucket (created previously)
+    - Drag and drop the file (from VSCode) into the bucket (or use the `Upload files` button)
+1. Go back to Mage http://localhost:6789
+    - Select `test_conf` pipeline
+    - Select  `Edit pipeline` 
+    - Select `+ Data loader > Python > Google Cloud Storage`
+    - Edit name to `test_gcs` and edit method `load_from_google_cloud_storage`
+        ```python
+        bucket_name = 'mage-zoomcamp-<your-name>-<number>'
+        object_key = 'titanic_clean.csv'
+        ```    
+    - Click ▶️ button or `CTRL+Enter` for execution
+    - Output should look like this
+        ```text
+        GoogleCloudStorage initialized
+        └─ Loading data frame from bucket 'mage-zoomcamp-<your-name>-<number>' at key 'titanic_clean.csv'...
+        DONE
+        ```
 
-https://youtu.be/00LP360iYvE?list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&t=370
+## 2.2.4 - ETL: API to GCS
+
+🎞️ https://youtu.be/w0XmcASRUnc?feature=shared
+
+Write data to GCS (Google Cloud Storage) from an API.
+
+1. Start with new batch pipeline `+ New > Standard (batch)` reusing blocks from previous section
+1. Drag and drop `load_api_data` (data loader) block into the pipeline
+1. Drag and drop `clean_taxi_data` (transformer) block into the pipeline
+1. Use `Tree` view on the right hand side and attach blocks by dragging one block over to the other (loader &rarr; transformer)
+1. Write data to GCS `+ Data exporter > Python > Google Cloud Storage` and rename it to `taxi_to_gcs_parquet` and click `Save and add block`
+    - Edit method `export_data_to_google_cloud_storage`
+        ```python
+        bucket_name = 'mage-zoomcamp-<your-name>-<number>'
+        object_key = 'nyc_taxi_data.parquet'
+        ```
+    - Execute pipeline `... > Execute with all upstream blocks` (this will execute all blocks in the pipeline)
+
+Data should now be available in GCS, check bucket in GCP [console.cloud.google.com](console.cloud.google.com).
+
+### Write data to a partioned Parquet file structure
+
+Partitioning by date is useful, because reading, writing and querying data is faster.
+
+1. At the end of the previous pipeline select `+ Data exporter > Python > Generic (no template)`
+1. Change name to `taxi_to_gcs_partitioned_parquet` and click `Save and add block`
+1. Remove connection to the previous block (export to GCS) and connect the transformer block `clean_taxi_data` to the new exporter block `taxi_to_gcs_partitioned_parquet`
+    - Now both exporter blocks are connected to the transformer block and will execute in parallel
+1. In block `taxi_to_gcs_partitioned_parquet` credentials will be defined manually and `pyarrow` library will be used to partition the dataset
+    ```python
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import os
+    
+    #... other code
+    
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/src/<json-key-file>'
+    bucket_name = 'mage-zoomcamp-<your-name>-<number>'
+    project_id = '<project-id>'
+    table_name = 'nyc_taxi_data'
+    root_path = f'{bucket_name}/{table_name}'
+
+    @data_exporter
+    def export_data(data, *args, **kwargs):
+        data['tpep_pickup_date'] = data['tpep_pickup_datetime'].dt.date
+        table = pa.Table.from_pandas(data)
+        gcs = pa.fs.GcsFileSystem()
+        pq.write_to_dataset(
+            table, 
+            root_path=root_path, 
+            partition_cols=['tpep_pickup_date'], 
+            filesystem=gcs)
+    ```
+1. Execute block `CTRL+Enter` or `▶️` button
+
+Afterwards the data should be available in GCS in a partitioned Parquet file structure within a folder `nyc_taxi_data`. In the folder there will be subfolders for each date containing the data for that date and each subfolder will contain a Parquet file.
+
+
+## 2.2.5 - ETL: GCS to BigQuery
+
+🎞️ https://youtu.be/JKp_uzM-XsM?feature=shared
+
+Taking data written to Google Cloud Storage (GCS), processing it, and writing it to Google BigQuery.
+
+1. Create a new pipeline `+ New > Standard (batch)` and use `Edit` for renaming it to `gcs_to_bigquery` and click `Save pipeline settings`
+1. Select `Edit pipeline` from sidebar
+1. Select `+ Data loader > Python > Google Cloud Storage`, rename it to `load_taxi_gcs`, click `Save and add block`
+1. Edit method `load_from_google_cloud_storage` using the unpartitioned file
+    ```python
+    bucket_name = 'mage-zoomcamp-<your-name>-<number>'
+    object_key = 'nyc_taxi_data.parquet'
+    ```
+1. Run data loader using `CTRL+Enter` or `▶️` button
+1. Select `+ Transformer > Python > Generic (no template)` and rename it to `transform_staged_data` and click `Save and add block`
+1. Renaming column names by applying the following transformation
+    ```python
+    @transformer
+    def transform(data, *args, **kwargs):
+        data.columns = (data.columns
+                        .str.replace(' ', '_')
+                        .str.lower()
+        )
+        return data
+    ```    
+1. Select `+ Data exporter > SQL` and rename it to `write_taxi_to_bigquery` then click `Save and add block`
+1. Specifying `Connection` as `BigQuerqy`, select `default` as `Profile`, specify schema as `ny_taxi` and table as `yellow_cab_data`
+    ```SQL
+    -- upstream block returns dataframe as df_1
+    SELECT * FROM {{ df_1 }}
+    ```
+    Will export all rows and columns from the dataframe to the BigQuery database.
+
+> Remark: `current` is a reserved keyword in BigQuery SQL, so the table_id should not contain this word. In the video the table_id contained this `verdant-current-...` which will cause an error with the SQL exporter . If using a Python exporter it will work with the same name.
+
+Check BigQuery in [console.cloud.google.com](console.cloud.google.com) to see if the data has been written to the table `yellow_cab_data`.
+1. Search using `bigquery` and select `BigQuery`
+1. Click on project (previous used `project-id`) and click on `ny_taxi` schema
+1. Check the table `yellow_cab_data` by clicking on `Preview`
+
+### Use a scheduler in MAGE
+
+1. Click on `Triggers` in sidebar
+1. Clicking on `Run@once` will run the pipeline
+1. Click on new trigger `+ New trigger` and select what should trigger the pipeline execution (e.g. schedule, event, API)
+1. Example select `Schedule` and rename it to `gcs_to_bigquery_schedule`, add a description, and select frequency `daily`, set start date and after that it will be triggered automatically. Click `Save changes` when done.
+1. Click `Enabgle trigger` to activate
