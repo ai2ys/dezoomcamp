@@ -184,6 +184,11 @@ Test Postgres connection
 
 🎞️ https://youtu.be/Maidfe7oKLs?si=stM0mvV3yj0dFmXL
 
+Resources
+- https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+- https://github.com/mage-ai/mage-zoomcamp/blob/solutions/magic-zoomcamp/data_loaders/load_nyc_taxi_data.py
+
+
 **Loading data from an API (compressed CSV file) to Postgres DB.**
 
 1. Create new Batch pipeline `+ New > Standard (batch)`
@@ -494,3 +499,164 @@ Check BigQuery in [console.cloud.google.com](console.cloud.google.com) to see if
 1. Click on new trigger `+ New trigger` and select what should trigger the pipeline execution (e.g. schedule, event, API)
 1. Example select `Schedule` and rename it to `gcs_to_bigquery_schedule`, add a description, and select frequency `daily`, set start date and after that it will be triggered automatically. Click `Save changes` when done.
 1. Click `Enabgle trigger` to activate
+
+
+## 2.2.6 - Parameterized Execution
+
+🎞️ https://youtu.be/H0hWjWxB-rg?feature=shared
+
+Datasets or loading datasets that depend on parameters which is referred to as parameterized execution.
+Execution of the pipeline is dependent on some variables that are supplied to the DAG (pipeline).
+
+MAGE supports different types of variables
+- Runtime variables
+- Global variables
+- Block variables
+- Secrets
+
+See MAGE documentation for more information
+- https://docs.mage.ai/getting-started/runtime-variable
+- https://docs.mage.ai/development/variables/overview
+
+Example showing how that works using runtime variables using the `load_to_gcp` example pipeline in video.
+
+> Remark: Blocks in MAGE are shared resources. Changing a block that is used in multiple pipelines will change it for all pipelines no matter in which pipeline it was edited.
+> Deleting a block from a pipeline will remove it from the pipeline but not from the project. If the block is used in another pipeline it will still be available there.
+
+
+
+1. Clone pipeline by right click on it and select `Clone`
+1. Select `Edit pipeline` from sidebar
+1. Select block `export_taxi_to_gcp` and copy code to clipboard
+1. Select `+ Data exporter > Python > Generic (no template)` and rename it to `export_taxi_to_gcp_parameter` click `Save and add block` then paste the code from the clipboard removing the default code
+1. Remove connections from other block used for copying and then delete it
+1. Adding connections for new block
+1. Rename pipeline to `load_to_gcp_parameterized`
+1. `Edit pipeline` and go to data exporter `export_taxi_to_gcp_parameterized`
+1. Comment code of `@data_exporter` method and add the following code and try it out
+    ```python
+    now = kwargs.get('execution_date')
+    print(now, now.date())
+    ```
+
+
+## 2.2.6 - Backfills
+
+🎞️https://youtu.be/ZoeC6Ag5gQc?feature=shared
+
+Handling lost or missing data when using parameterized runs.
+
+1. Select any pipeline
+1. Select `Backfills` from sidebar
+1. `+ Create new backfill`
+    - Backfill type is set to `Date and time window`
+    - Rename it e.g. `magic-zoomcamp-backfill`
+    - Select start date
+    - Select end date
+    - Set time spacing to `Day` and `1`
+
+
+## 2.2.7 - Deployment Prerequisites
+
+🎞️ https://youtu.be/zAwAX5sxqsg?feature=shared
+
+Deploying Mage to Google Cloud using Terraform.
+
+Prerequisites:
+- Terraform
+- gcloud cli
+- Google Cloud Permissions
+- Mage Terraform templates
+
+
+
+## 2.2.7 - Google Cloud Permissions
+
+🎞️ https://youtu.be/O_H7DCmq2rA?feature=shared
+
+On [console.cloud.google.com](https://console.cloud.google.com) go to `IAM & Admin` and select the `mage-zoomcamp` service account created previously.
+
+Remove the `Owner` permission and add more specific permissions. Therefore `+ Add Another Role`
+- Artifact Registry Reader
+- Artifact Registry Writer
+- Cloud Run Developer
+- Cloud SQL Admin
+- Service Account Token Creator
+
+Confirm with `Save`.
+
+
+## 2.2.7 - Deployment to Google Cloud Part 1
+
+🎞️ https://youtu.be/9A872B5hb_0?feature=shared
+
+Additional resources
+- https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+- https://cloud.google.com/sdk/docs/install
+- https://github.com/mage-ai/mage-ai-terraform-templates
+- https://docs.mage.ai/production/deploying-to-cloud/using-terraform
+- https://docs.mage.ai/production/deploying-to-cloud/gcp/setup
+
+
+
+1. Confirm that Google Cloud is working
+    ```bash
+    gcloud auth list
+    ```
+    Check things are operating by listing the buckets
+    ```bash
+    gcloud storage ls
+    ```
+1. Confirm that Terraform is working (pull Mage Terraform template)
+    ```bash
+    git clone git@github.com:mage-ai/mage-ai-terraform-templates.git
+    cd mage-ai-terraform-templates
+    ls -la
+    ```
+    There is a Terraform template for each deployment (AWS, GCP, digitalocean, etc.)
+    ```bash
+    cd gcp
+    ls -la
+    ```
+    Open VSCode
+    ```bash
+    code .
+    ```
+1. Spin up Mage server using one of the Mage terraform templates
+
+## 2.2.7 - Deployment to Google Cloud Part 2
+
+🎞️ https://youtu.be/0YExsb2HgLI?feature=shared
+
+> Remark: Seems to assume that `terraform apply` has been executed
+
+1. Open [console.cloud.google.com](console.cloud.google.com) and go to the navigation menue (top left corner)
+1. Select `Cloud Run` and click on the run (name resource that has been created)
+1. Copy URL to clipboard and open it in a browser (access won't work because of IP restrictions)
+1. Click on `Networking` tab to white list IP address
+    - Currently not explained how to only white list the own IP address
+1. Open URL again in browser
+
+> Remark: ⚠️At the end run `terraform destroy`
+
+## 2.2.8 - Homework
+
+https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/cohorts/2024/02-workflow-orchestration/homework.md
+
+## 2.2.8 - Next Steps
+
+🎞️ https://youtu.be/uUtj7N0TleQ?feature=shared
+
+Additional resources
+- https://docs.mage.ai/
+- https://docs.mage.ai/guides
+- https://www.mage.ai/chat
+
+
+1. Deployment
+1. Piplines
+    - Streaming
+    - Data integration
+1. Alerting
+1. Triggers & scheduling
+
