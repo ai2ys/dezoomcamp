@@ -1,0 +1,73 @@
+version: '3'
+services:
+  magic:
+    image: mageai/mageai:latest
+    command: mage start ${PROJECT_NAME}
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      USER_CODE_PATH: /home/src/${PROJECT_NAME}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME}
+      POSTGRES_SCHEMA: ${POSTGRES_SCHEMA}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+    ports:
+      - 6789:6789
+    volumes:
+      - .:/home/src/
+      #- ~/Documents/secrets/personal-gcp.json:/home/src/personal-gcp.json
+    restart: on-failure:5
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    restart: on-failure
+    container_name: ${PROJECT_NAME}-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DBNAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    # healthcheck:
+    #   test: ["CMD", "pg_isready", "-U", "$POSTGRES_USER", "-d", "$POSTGRES_DB"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+  terraform:
+    container_name: terraform
+    hostname: terraform
+    image: hashicorp/terraform:1.7.1
+    working_dir: /terraform
+    # volumes:
+    #   - ./terraform_with_variables:/terraform
+    #   - gcloud-config:/config/mygcloud 
+    environment:
+      GOOGLE_CREDENTIALS: /config/mygcloud/application_default_credentials.json
+    entrypoint: terraform
+    deploy:
+      # mode: replicated
+      replicas: 0
+
+  gcloud-config:
+    container_name: gcloud-config
+    hostname: gcloud-config
+    image: google/cloud-sdk:slim
+    environment:
+      CLOUDSDK_CONFIG: /config/mygcloud
+    # volumes:
+    #  - gcloud-config:/config/mygcloud
+    command: gcloud auth application-default login
+    tty: true
+    deploy:
+      # mode: replicated
+      replicas: 0

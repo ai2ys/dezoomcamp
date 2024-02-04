@@ -1,0 +1,110 @@
+blocks:
+- all_upstream_blocks_executed: true
+  color: null
+  configuration: {}
+  downstream_blocks:
+  - transform_drop_rows
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: read_final_quarter_2020
+  retry_config: null
+  status: updated
+  timeout: null
+  type: data_loader
+  upstream_blocks: []
+  uuid: read_final_quarter_2020
+- all_upstream_blocks_executed: false
+  color: null
+  configuration: {}
+  downstream_blocks:
+  - transformer_add_date_col
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_drop_rows
+  retry_config: null
+  status: updated
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - read_final_quarter_2020
+  uuid: transform_drop_rows
+- all_upstream_blocks_executed: false
+  color: null
+  configuration: {}
+  downstream_blocks:
+  - transform_check_vendorid
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transformer_add_date_col
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - transform_drop_rows
+  uuid: transformer_add_date_col
+- all_upstream_blocks_executed: false
+  color: null
+  configuration: {}
+  downstream_blocks:
+  - transform_rename_cols
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_check_vendorid
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - transformer_add_date_col
+  uuid: transform_check_vendorid
+- all_upstream_blocks_executed: false
+  color: null
+  configuration: {}
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: transform_rename_cols
+  retry_config: null
+  status: executed
+  timeout: null
+  type: transformer
+  upstream_blocks:
+  - transform_check_vendorid
+  uuid: transform_rename_cols
+cache_block_output_in_memory: false
+callbacks: []
+concurrency_config: {}
+conditionals: []
+created_at: '2024-02-04 10:28:32.758259+00:00'
+data_integration: null
+description: null
+executor_config: {}
+executor_count: 1
+executor_type: null
+extensions: {}
+name: green_taxi_etl
+notification_config: {}
+remote_variables_dir: null
+retry_config: {}
+run_pipeline_in_one_process: false
+settings:
+  triggers: null
+spark_config: {}
+tags:
+- dezoomcamp_homework_2
+type: python
+updated_at: '2024-02-04 12:10:59'
+uuid: green_taxi_etl
+variables_dir: /home/src/mage_data/magic-zoomcamp
+widgets: []
