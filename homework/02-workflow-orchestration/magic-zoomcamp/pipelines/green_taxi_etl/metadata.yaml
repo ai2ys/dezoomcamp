@@ -20,6 +20,7 @@ blocks:
   configuration: {}
   downstream_blocks:
   - export_green_taxi
+  - gcp_write_partitioned
   executor_config: null
   executor_type: local_python
   has_callback: false
@@ -48,6 +49,47 @@ blocks:
   upstream_blocks:
   - transform_green_taxi
   uuid: export_green_taxi
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    data_provider: postgres
+    data_provider_profile: dev
+    dbt: {}
+    disable_query_preprocessing: false
+    export_write_policy: append
+    limit: 1000
+    use_raw_sql: true
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: sql
+  name: test
+  retry_config: null
+  status: executed
+  timeout: null
+  type: data_loader
+  upstream_blocks: []
+  uuid: test
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    data_provider: postgres
+    data_provider_profile: dev
+    export_write_policy: append
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: gcp_write_partitioned
+  retry_config: null
+  status: failed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - transform_green_taxi
+  uuid: gcp_write_partitioned
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}
@@ -70,7 +112,7 @@ spark_config: {}
 tags:
 - dezoomcamp_homework_2
 type: python
-updated_at: '2024-02-06 20:18:27'
+updated_at: '2024-02-06 21:38:46'
 uuid: green_taxi_etl
 variables_dir: /home/src/mage_data/magic-zoomcamp
 widgets: []

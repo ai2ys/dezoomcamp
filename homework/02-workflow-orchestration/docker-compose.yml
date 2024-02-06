@@ -71,3 +71,17 @@ services:
     deploy:
       # mode: replicated
       replicas: 0
+
+  pgcli:
+    image: ai2ys/dockerized-pgcli:4.0.1
+    container_name: pgcli
+    depends_on:
+      - postgres
+    # networks:
+    #   - pg-network
+    entrypoint: /bin/bash
+    #command: [-c, pgcli -h pg-database -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DBNAME]
+    command: [-c, pgcli -h  $PROJECT_NAME-postgres -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DBNAME]
+    deploy:
+      # mode: replicated
+      replicas: 0
