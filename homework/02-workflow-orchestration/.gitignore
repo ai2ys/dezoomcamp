@@ -172,8 +172,10 @@ node_modules
 scratch*
 /mage_data*
 *secrets*.json
-magic-zoomcamp/*
+# magic-zoomcamp/*
 !magic-zoomcamp/data_loaders/read_final_quarter_2020.py
-!magic-zoomcamp/transformers/transform*.py
+!magic-zoomcamp/transformers/transform_green_taxi.py
+magic-zoomcamp/.file_versions/
+
 *.json
 

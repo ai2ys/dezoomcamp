@@ -7,10 +7,3 @@ notes/02-workflow-orchestration/mage/.env
 notes/02-workflow-orchestration/mageai/mage_data/
 notes/02-workflow-orchestration/mageai/magic-zoomcamp/
 notes/02-workflow-orchestration/mageai/.env
-
-
-# !homework/02-workflow-orchestration/magic-zoomcamp/pipelines/green_taxi_etl
-# !homework/02-workflow-orchestration/magic-zoomcamp/transformers
-# homework/02-workflow-orchestration/.env
-# homework/02-workflow-orchestration/mage_data/
-# homework/02-workflow-orchestration/magic-zoomcamp/

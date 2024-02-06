@@ -3,70 +3,36 @@ blocks:
   color: null
   configuration: {}
   downstream_blocks:
-  - transform_drop_rows
+  - transform_green_taxi
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
   name: read_final_quarter_2020
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: data_loader
   upstream_blocks: []
   uuid: read_final_quarter_2020
-- all_upstream_blocks_executed: false
+- all_upstream_blocks_executed: true
   color: null
   configuration: {}
   downstream_blocks:
-  - transformer_add_date_col
+  - export_green_taxi
   executor_config: null
   executor_type: local_python
   has_callback: false
   language: python
-  name: transform_drop_rows
+  name: transform_green_taxi
   retry_config: null
-  status: updated
+  status: executed
   timeout: null
   type: transformer
   upstream_blocks:
   - read_final_quarter_2020
-  uuid: transform_drop_rows
-- all_upstream_blocks_executed: false
-  color: null
-  configuration: {}
-  downstream_blocks:
-  - transform_check_vendorid
-  executor_config: null
-  executor_type: local_python
-  has_callback: false
-  language: python
-  name: transformer_add_date_col
-  retry_config: null
-  status: executed
-  timeout: null
-  type: transformer
-  upstream_blocks:
-  - transform_drop_rows
-  uuid: transformer_add_date_col
-- all_upstream_blocks_executed: false
-  color: null
-  configuration: {}
-  downstream_blocks:
-  - transform_rename_cols
-  executor_config: null
-  executor_type: local_python
-  has_callback: false
-  language: python
-  name: transform_check_vendorid
-  retry_config: null
-  status: executed
-  timeout: null
-  type: transformer
-  upstream_blocks:
-  - transformer_add_date_col
-  uuid: transform_check_vendorid
-- all_upstream_blocks_executed: false
+  uuid: transform_green_taxi
+- all_upstream_blocks_executed: true
   color: null
   configuration: {}
   downstream_blocks: []
@@ -74,14 +40,14 @@ blocks:
   executor_type: local_python
   has_callback: false
   language: python
-  name: transform_rename_cols
+  name: export_green_taxi
   retry_config: null
   status: executed
   timeout: null
-  type: transformer
+  type: data_exporter
   upstream_blocks:
-  - transform_check_vendorid
-  uuid: transform_rename_cols
+  - transform_green_taxi
+  uuid: export_green_taxi
 cache_block_output_in_memory: false
 callbacks: []
 concurrency_config: {}
@@ -104,7 +70,7 @@ spark_config: {}
 tags:
 - dezoomcamp_homework_2
 type: python
-updated_at: '2024-02-04 12:10:59'
+updated_at: '2024-02-06 20:18:27'
 uuid: green_taxi_etl
 variables_dir: /home/src/mage_data/magic-zoomcamp
 widgets: []
