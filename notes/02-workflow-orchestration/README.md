@@ -283,13 +283,14 @@ Configuring GCP (Google Cloud Platform) for Mage
 1. Create new `+ Bucket` called `mage-zoomcamp-<your-name>-<number>` (have to be globally unique)
 1. Check `Location type` (in the video it is not changed, `Multi-region` set to `us`)
 1. Check `Choose a default storage class for you data` (in the video it is not changed, `Standard`)
-1. Check `Choose how to control access to objects` and ensure `Enforce public access prevention on this bucket` is activated (✅ means the bucket will not be publicly accessible) and `Access control` will not be changed (default is `Uniform`)
+1. Check `Choose how to control access to objects` and ensure `Enforce public access prevention on this bucket` (will pop-up on `Continue`) is activated (✅ means the bucket will not be publicly accessible) and `Access control` will not be changed (default is `Uniform`)
 1. Click `Create` button to create the bucket
 
 ### Create Service Account
 
 Mage uses service accounts to connect to GCP. Service accounts are used to authenticate and authorize the Mage instance to access GCP resources.
 
+1. Select the project the service account should be created for
 1. Enter `service accounts` in search field and select `Service Accounts (IAM & Admin)` &rarr; will open `IAM & Admin` with default view `Service Accounts`
 1. Create new service account `+ Create Service Account`
 1. Enter `Service account details`
@@ -422,6 +423,9 @@ Partitioning by date is useful, because reading, writing and querying data is fa
 1. Remove connection to the previous block (export to GCS) and connect the transformer block `clean_taxi_data` to the new exporter block `taxi_to_gcs_partitioned_parquet`
     - Now both exporter blocks are connected to the transformer block and will execute in parallel
 1. In block `taxi_to_gcs_partitioned_parquet` credentials will be defined manually and `pyarrow` library will be used to partition the dataset
+    - For `project_id` go to [console.cloud.google.com](console.cloud.google.com)
+    - Go to dashboard and select the project from the drop down
+    - See `Project info` and copy `Project ID`
     ```python
     import pyarrow as pa
     import pyarrow.parquet as pq

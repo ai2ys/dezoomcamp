@@ -43,7 +43,7 @@ blocks:
   language: python
   name: export_green_taxi
   retry_config: null
-  status: executed
+  status: updated
   timeout: null
   type: data_exporter
   upstream_blocks:
@@ -84,7 +84,7 @@ blocks:
   language: python
   name: gcp_write_partitioned
   retry_config: null
-  status: failed
+  status: executed
   timeout: null
   type: data_exporter
   upstream_blocks:
@@ -112,7 +112,7 @@ spark_config: {}
 tags:
 - dezoomcamp_homework_2
 type: python
-updated_at: '2024-02-06 21:38:46'
+updated_at: '2024-02-07 20:16:59'
 uuid: green_taxi_etl
 variables_dir: /home/src/mage_data/magic-zoomcamp
 widgets: []
