@@ -49,4 +49,93 @@ Data ware can be transformed into data marts, which are smaller data warehouses 
 
 ### BigQuery
 
-- Serverless data warehouse
+- Serverless, highly scalable, and cost-effective multi-cloud data warehouse
+- Built-in features for machine learning and geospatial analysis
+
+Flexibility of BigQuery how to stores the data, separating storage and compute.
+
+Things to take care of
+- BigQuery usually caches data. Turning at off for demo and reproducible results.
+    - Click on the `More` button on the top right corner of the query editor
+    - Select `Query settings`
+    - In section `Cache preference` uncheck `Use cached results`
+
+BigQuery comes with a lot of open source public datasets, which can be used for learning and testing.
+
+BigQuery costs (two main pricing models)
+- On demand pricing (mostly better suited)
+- Flat rate pricing 
+
+
+Queries used in video: https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/03-data-warehouse/big_query.sql
+
+
+
+- External data sources
+    - Create an external table to query data stored in Cloud Storage, Google Drive, or Google Sheets
+    - Table information does not contain information about `Table size`, `Number of rows` because the data is not stored in BigQuery as it resides in an external source like Google Cloud Storage
+    - Costs for querying external data can not be estimated in advance
+    - Creating an external table, see example from link above (highlight the lines of code you want to execute and click `Run` or `Cmd/Ctrl + Enter`)
+        ```sql
+        -- Creating external table referring to gcs path
+        CREATE OR REPLACE EXTERNAL TABLE `taxi-rides-ny.nytaxi.external_yellow_tripdata`
+        OPTIONS (
+          format = 'CSV',
+          uris = ['gs://nyc-tl-data/trip data/yellow_tripdata_2019-*.csv', 'gs://nyc-tl-data/trip data/yellow_tripdata_2020-*.csv']
+        );
+        ```
+        In this example there is a Bucket `nyc-tl-data` with a folder `trip data` and files `yellow_tripdata_2019-*.csv` and `yellow_tripdata_2020-*.csv` that are used for creating the external table.
+- Partitioned tables
+    - https://cloud.google.com/bigquery/docs/partitioned-tables
+    - The number of partitions is limited to 4,000 partitions per table
+    - The type of datatype used for partitioning is limited to time unit columns, ingestion time or integer ranges
+        - When partitioning based on hours it might be a good choice to define an expiration time for the data to avoid having too many partitions
+    - Partitioned tables are a good fit for time-series data (e.g. partition by date)
+    - ℹ️ When doing queries on partitioned tables, BigQuery can skip scanning partitions that do not contain data relevant to the query &rarr reduces costs 
+    - Partitioning not suitable in case of small datasets
+    - Create partitioned table
+    -- Create a partitioned table from external table
+        ```sql
+        -- Create a partitioned table from external table
+        CREATE OR REPLACE TABLE taxi-rides-ny.nytaxi.yellow_tripdata_partitoned
+        PARTITION BY
+          DATE(tpep_pickup_datetime) AS
+        SELECT * FROM taxi-rides-ny.nytaxi.external_yellow_tripdata;
+        ```
+        The keyword `PARTITION BY` is used to specify the column to partition the table by. In this case, the column `tpep_pickup_datetime` is used to partition the table by date.
+    - In the `Table info` you can see the 'partition' information (`Table Type: Partitioned`, `Partitioned by: DAY`, ``Partitioned on field: tpep_pickup_datetime`, ...)
+    - Check how many rows are falling into which partition (check for bias in the partition). 
+        ```sql
+        -- Let's look into the partitons - how many rows are in each partition
+        SELECT table_name, partition_id, total_rows
+        FROM `nytaxi.INFORMATION_SCHEMA.PARTITIONS`
+        WHERE table_name = 'yellow_tripdata_partitoned'
+        ORDER BY total_rows DESC;
+        ```
+        There should not be a large difference between the number of rows in each partition. If there is a large difference this might indicate that the column used for partitioning is not a good choice.
+
+- Clustering
+    - Up to four columns can be specified for clustering
+        - Must be top-level, non-repeated columns
+        - Data type must be of the following types: `DATE`, `BOOL`, `GEOGRAPHY`, `INT64`, `NUMERIC`, `BIGNUMERIC`, `STRING`, `STRING`, `TIMESTAMP`, `DATETIME`
+    - Will group the data based on the columns specified within the partition
+    - Multiple columns can be used for clustering
+    - The order of the columns is important, because the data is sorted based on the order of the columns
+    - Example for clustering a partitioned table
+        ```sql
+        -- Creating a partition and cluster table
+        CREATE OR REPLACE TABLE taxi-rides-ny.nytaxi.yellow_tripdata_partitoned_clustered
+        PARTITION BY DATE(tpep_pickup_datetime)
+        CLUSTER BY VendorID AS
+        SELECT * FROM taxi-rides-ny.nytaxi.external_yellow_tripdata;
+        ```
+        The keyword `CLUSTER BY` is used to specify the column to cluster the table by. In this case, the column `VendorID` is used to cluster the table by passenger count.
+    - In the `Table info` (details section) the clustering information can be found below the partitioning information (..., `Clustered by: VendorID`)
+    - Clustering improves filter and aggregation performance
+
+
+> ❗️ Tables smaller than 1 GB are not recommended to be clustered (adds more overhead than benefits, same for partitioning)
+
+> ℹ️ There are different icons that indicate partitioned and clustered tables in the BigQuery UI.
+>
+> Clustering &rarr; cost benefit unknows vs partitioning &rarr; cost benefit known
