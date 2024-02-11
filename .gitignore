@@ -7,3 +7,4 @@ notes/02-workflow-orchestration/mage/.env
 notes/02-workflow-orchestration/mageai/mage_data/
 notes/02-workflow-orchestration/mageai/magic-zoomcamp/
 notes/02-workflow-orchestration/mageai/.env
+homework/03-data-warehouse/*.parquet
