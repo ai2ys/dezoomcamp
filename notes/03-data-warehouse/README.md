@@ -1,8 +1,9 @@
 # 03 Data Warehouse
 
-## 3.1.1 - Data Warehouse and BigQuery
+## 3.1.1 - Data Warehouse and BigQuery and 3.1.2 - Partitioning and Clustering
 
 🎞️ https://youtu.be/jrHljAoD6nM?si=_doAtu_tJ479RKWw
+🎞️ https://youtu.be/-CqXf7vhhDs?feature=shared
 
 - Slides https://docs.google.com/presentation/d/1a3ZoBAXFk8-EhUsd7rAZd-5p_HpltkzSeujjRGB2TAI/edit?usp=sharing
 - Big Query basic SQL https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/03-data-warehouse/big_query.sql
@@ -134,8 +135,70 @@ Queries used in video: https://github.com/DataTalksClub/data-engineering-zoomcam
     - Clustering improves filter and aggregation performance
 
 
-> ❗️ Tables smaller than 1 GB are not recommended to be clustered (adds more overhead than benefits, same for partitioning)
+## 3.2.1 BigQuery Best Practices
 
-> ℹ️ There are different icons that indicate partitioned and clustered tables in the BigQuery UI.
+🎞️ https://youtu.be/k81mLJVX08w?feature=shared
+
+> ❗️Important 
+> - Tables smaller than 1 GB are not recommended to be clustered (adds more overhead than benefits, same for partitioning)
+> - Cost reduction
+>     - Avoid `SELECT *` (specify column names)
+>     - Always price queries before running them (right top corner of the query editor)
+>     - Use clustering and partitioning
+>     - Use streaming inserts with caution (can increase costs drastically)
+>     - Materialize query results in stage
 >
-> Clustering &rarr; cost benefit unknows vs partitioning &rarr; cost benefit known
+> - Query performance
+>     - Filter on partitioned or clustered columns
+>     - Denormalize data (means to store data in a single table that is not normalized)
+>     - Use nested or repeated columns (in case of complicated data structures, that will help denormalize the data)
+>     - Do not use external data too much (use it only when necessary)
+>     - Reduce data before using `JOIN` (means to filter the data before joining it)
+>     - Do not treat `WITH` caluses as prepared statements (means to use `WITH` clauses only for readability and not for performance)
+>     - Avoid oversharding tables (means to avoid creating too many partitions or clusters)
+>     - Avoid using `JavaScript` user-defined functions 
+>     - Use approximante aggregation functions (e.g. `HyperLogLog++`)
+>     - Order statements should be at the last part of the query 
+>     - Optimize join patterns
+>          - Place tables iwth largest number of rows first, followed by the smaller tables (fewer rows), and then the tables with the smallest number of rows (reason is because the second table would be broadcasted to all nodes)
+> 
+> ℹ️ Information
+> - There are different icons that indicate partitioned and clustered tables in the BigQuery UI.
+> - Clustering &rarr; cost benefit unknown
+> - Partitioning &rarr; cost benefit known
+
+
+## 3.2.2 Internals of BigQuery
+
+🎞️ https://youtu.be/eduHi1inM4s?feature=shared
+
+BigQuery stores data in into a separate storage called `Colossus`, which is a "cheap storage" and stores data in a columnar format. 
+
+Advantage of separating storage and compute
+- Significant cost savings
+    - In case more storage is needed, only storage costs are increased
+    - In case more compute is needed, only compute costs are increased
+- Most cost occur when reading the data or running the queries
+
+Jupiter network
+- Because of the separation of storage and compute a bad network connection can lead to slow queries. This is a disadvantage where jupiter network comes into play. Jupiter network is inside BigQuery data centers (provides ~1TB/s network speed).
+
+Dremel
+- Query execution engine
+- Divides query into a tree structure and separates the query into smaller parts so that each node can execute a subset of the query
+
+
+Record oriented vs column oriented
+- Record oriented databases store data in rows (similar CSV)
+    - Easy to process and understand
+- column (tree) oriented structure
+    - Data of same row can be seen in multiple places
+    - BigQuery uses column oriented structure
+    - Better aggregation performance
+    - Generally querying only a few columns and filter and aggregate on them
+
+
+## 3.3.1  BigQuery Machine Learning
+
+🎞️ https://youtu.be/B-WtpB0PuG4?feature=shared
+
