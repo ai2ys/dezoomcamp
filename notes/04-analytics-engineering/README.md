@@ -2,7 +2,9 @@
 
 Course note created by course peer of previous cohorts:
 🗒️<https://github.com/ziritrion/dataeng-zoomcamp/blob/c4447687719f76ca04cedfcc1ac8f8ad23eb0cde/notes/4_analytics.md> 
+
 ## dbt(Data Build Tool) crash course for beginners: Zero to Hero
+
 🎞️ <https://youtu.be/C6BNAfaeqXY?feature=shared> (other resource outside of course)
 
 Docker images for dbt: https://github.com/dbt-labs/dbt-core/pkgs/container/dbt-core
@@ -60,7 +62,9 @@ Prerequisites:
 
 
     
+## In general instructions
 
+<https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/04-analytics-engineering>
 
 
 
@@ -78,11 +82,42 @@ Prerequisites:
 
 DBT project can get created in a subdiretory of the GitHub repository, this can get specified in `Project details > Project subdirectory` in dbt cloud.
 DBT will be on the default branch of the repository in `read-only` mode, to allow dbt cloud to make changes creating a new branch from dbt cloud is necessary.
-In the project settings `Setup a repository` access can be granted to a specific repository.
+In the project settings `Setup a repository` access can be granted to a specific repository. Furthermore a sub directory can be specified.
 
+From the menu in the dbt cloud select `Develop 🔽 > Cloud IDE` 
 
-Setup connection to BigQuery in dbt cloud:
+- There will be an error message regarding a missing environment. Create it as development and do not specify a branch.
+- In GitHub create a new branch, e.g. `dev-dbt`
+- Click again on `Develop 🔽 > Cloud IDE` 
+- Change the branch to the newly created branch `dev-dbt`
+- Initialize the project and then commit the changes
+- In the `dbt_project.yml` edit the name and model and remove the indicated `models` section below
+     ```yml
+    name: 'taxi_rides_ny'
+    # ...
+    models:
+        taxi_rides_ny:
+            # delete everything here
+    ```
+- In the command bar (bottom) run `dbt build` (there is an error message, but it seems not relevant at the moment, also ignored in the video)
+- Commit changes
 
 ## Start Your dbt Project: Postgres and dbt Core Locally (Alternative B)
 
+Additional resources
+
+- dbt with BigQuery on Docker<br>
+<https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/04-analytics-engineering/docker_setup/README.md>
+<br>or<br>
+<https://docs.getdbt.com/docs/core/docker-install>
+
+- dbt with Docker<br>
+<https://docs.getdbt.com/docs/core/docker-install>
+
+- dbt with BigQuery on Docker<br>
+    - <https://github.com/dbt-labs/dbt-bigquery/pkgs/container/dbt-bigquery>
+    -
+
+
 🎞️ <https://youtu.be/1HmL63e-vRs?feature=shared>
+

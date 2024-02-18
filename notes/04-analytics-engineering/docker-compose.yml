@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  dbt-bigquery:
+    image: ghcr.io/dbt-labs/dbt-bigquery:1.7.4
+  env: 
+    BIGQUERY_KEY_FILE: /.google/credentials/bigquery_credentials.json
+  volumes:
+    # - .:/usr/app
+    # - ~/.dbt/:/root/.dbt/
+    - ${LOCAL_BIGQUERY_KEY_FILE}:
+  network_mode: host
