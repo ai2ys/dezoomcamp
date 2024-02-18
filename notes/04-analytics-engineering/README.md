@@ -102,7 +102,7 @@ From the menu in the dbt cloud select `Develop 🔽 > Cloud IDE`
 - In the command bar (bottom) run `dbt build` (there is an error message, but it seems not relevant at the moment, also ignored in the video)
 - Commit changes
 
-## Start Your dbt Project: Postgres and dbt Core Locally (Alternative B)
+## 4.2.2 Start Your dbt Project: Postgres and dbt Core Locally (Alternative B)
 
 Additional resources
 
@@ -116,8 +116,193 @@ Additional resources
 
 - dbt with BigQuery on Docker<br>
     - <https://github.com/dbt-labs/dbt-bigquery/pkgs/container/dbt-bigquery>
-    -
 
+Steps accompished
+
+1. Create [docker-compose.yml](./docker-compose.yml) file using the BigQuery image
+1. Created `profiles.yml` file in the `~/.dbt` directory using the following template <https://docs.getdbt.com/docs/core/connect-data-platform/bigquery-setup#service-account-file>
+    ```yml	
+    bq-dbt-workshop:
+        target: dev
+        outputs:
+            dev:
+                type: bigquery
+                method: service-account
+                project: <GCP_PROJECT_ID>
+                dataset: <DBT_DATASET_NAME>
+                threads: 4 # Must be a value of 1 or greater
+                keyfile: /.gcp/credentials/gcp_bigquery.json
+                # additional settings provided by dezoomcamp
+                location: EU
+                priority: interactive
+                timeout_seconds: 300
+                fixed_retries: 1
+    ```
+1. Run `docker compose ...` to start the dbt container
+    ```bash
+    docker compose run dbt-bigquery init --profile "bq-dbt-workshop"
+    # Enter a name for your project (letters, digits, underscore): ny_taxi_rides_docker
+
+    # Test connection, should output "All checks passed!"
+    docker compose run --workdir="/usr/app/dbt/ny_taxi_rides_docker" dbt-bigquery
+ debug
+    ```
 
 🎞️ <https://youtu.be/1HmL63e-vRs?feature=shared>
 
+## 4.3.1 - Build the First dbt Models
+
+🎞️<https://youtu.be/ueVy2N54lyc?feature=shared>
+
+
+
+
+Modual data modeling structure
+
+1. Tables that we loaded (sources)
+1. Models that we build (transformations like cleaning, deduplication, etc.)
+
+Materializations in dbt Cloud
+
+- Ephemeral materializations (temporary, only exist for duration of a single dbt run)
+- View (virtual table, that can be queried like a table)
+- Table (physical table in the database)
+- Incremental materializations (efficient updates to existing tables, reducing the need for full data refreshes)
+
+`FROM` clause of a dbt model
+
+- Sources - data loaded to our data warehouse
+- Seeds - CSV files in `seeds` directory
+- Ref - macro to reference underlying tables and views (dependencies are built automatically)
+
+
+Prerequsites
+
+- 🎞️ <https://youtu.be/Mork172sK_c?feature=shared>
+- Use public dataset available in `BigQuery` <https://console.cloud.google.com/marketplace/product/city-of-new-york/nyc-tlc-trips>
+    - Click `View dataset`
+    - Got to ny_your_taxi_trips` and for one of the required datasets click `... > Query`
+        ```sql
+        SELECT * FROM `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2019` LIMIT 10 
+        ```
+        - `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2019`
+        - `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2020`
+        - `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2019`
+        - `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2020`
+    - Go to own account (top in the Explorer) and create a dataset `trips_data_all` (use same name as defined in schema in schema.yml), select multi region `US` as region (will not work with `EU` region because of location of the public dataset)
+    - Create a query `+`
+        ```sql
+        CREATE TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata` AS
+        SELECT * FROM `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2019`;
+
+        CREATE TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata` AS
+        SELECT * FROM `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2019`;
+
+        INSERT INTO `dezoomcamp-module-4.trips_data_all.green_tripdata` 
+        SELECT * FROM `bigquery-public-data.new_york_taxi_trips.tlc_green_trips_2020`;
+
+        INSERT INTO `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        SELECT * FROM `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2020`;
+
+        -- Fixes yellow table schema
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN vendor_id TO VendorID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN pickup_datetime TO tpep_pickup_datetime;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN dropoff_datetime TO tpep_dropoff_datetime;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN rate_code TO RatecodeID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN imp_surcharge TO improvement_surcharge;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN pickup_location_id TO PULocationID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.yellow_tripdata`
+        RENAME COLUMN dropoff_location_id TO DOLocationID;
+
+        -- Fixes green table schema
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN vendor_id TO VendorID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN pickup_datetime TO lpep_pickup_datetime;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN dropoff_datetime TO lpep_dropoff_datetime;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN rate_code TO RatecodeID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN imp_surcharge TO improvement_surcharge;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN pickup_location_id TO PULocationID;
+        ALTER TABLE `dezoomcamp-module-4.trips_data_all.green_tripdata`
+        RENAME COLUMN dropoff_location_id TO DOLocationID;
+        ```
+        Note: do not run all at once because of quota limitations, only run a few at one time.
+
+
+
+Go to dbt Cloud project in IDE
+
+- Open `dbt_project.yml` already prepared in the previous steps (alternative A)
+- Create folder `models/staging` (initial layer of the models that are cleaning the source data)
+- Create file `models/staging/schema.yml`
+
+    ```yaml
+    # schema.yml
+    version: 2
+    sources:
+        - name: staging
+        database: <your_project> # e.g. bigquery (top level name in bigquery resources for the project)
+        schema: trips_data_all # schema is one level below the database name
+
+        tables:
+            - name: green_tripdata
+            - name: yellow_tripdata
+    ```
+
+- In editor click on `Generate model` hint above `green_tripdata` in schema. Save it as `models/staging/stg_green_tripdata.sql`.
+
+- Now run `dbt build` (command bar bottom left), but delete the `models/examples` folder as this will cause an error.
+
+
+Macros
+
+- Macros are `Jinja` code that can be reused, see <https://en.wikipedia.org/wiki/Jinja_(template_engine)>
+- Jinja delimiters:
+    - {% ... %} for statements (control blocks, macro definitions)
+    - {{ ... }} for expressions (literals, math, comparisons, logic, macro calls...)
+    - {# ... #} for comments.
+
+- Create file `macros/get_payment_type_description.sql` 
+    ```jinja
+    {#
+        This macro returns the description of the payment_type 
+    #}
+
+    {% macro get_payment_type_description(payment_type) -%}
+
+        case {{ dbt.safe_cast("payment_type", api.Column.translate_type("integer")) }}  
+            when 1 then 'Credit card'
+            when 2 then 'Cash'
+            when 3 then 'No charge'
+            when 4 then 'Dispute'
+            when 5 then 'Unknown'
+            when 6 then 'Voided trip'
+            else 'EMPTY'
+        end
+
+    {%- endmacro %}
+    ```
+
+
+<!-- TODO missing how to apply this a little bit before 24:00 in the video -->
+
+Packages
+
+video < https://youtu.be/ueVy2N54lyc?list=PLaNLNpjZpzwgneiI-Gl8df8GCsPYp_6Bs&t=1501>
+
+
+
+
+
+
+## 4.3.2 

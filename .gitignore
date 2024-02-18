@@ -9,3 +9,5 @@ notes/02-workflow-orchestration/mageai/magic-zoomcamp/
 notes/02-workflow-orchestration/mageai/.env
 homework/03-data-warehouse/*.parquet
 notes/04-analytics-engineering/.env
+notes/04-analytics-engineering/dbt/taxi_rides_ny_docker/logs/
+notes/04-analytics-engineering/dbt/logs/
