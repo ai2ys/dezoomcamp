@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.8'
 
 x-shared-gcloud: &shared-gcloud
   # https://hub.docker.com/r/google/cloud-sdk
