@@ -104,7 +104,7 @@ From the menu in the dbt cloud select `Develop 🔽 > Cloud IDE`
 
 ## 4.2.2 Start Your dbt Project: Postgres and dbt Core Locally (Alternative B)
 
-Additional resources
+### Additional resources
 
 - dbt with BigQuery on Docker<br>
 <https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/04-analytics-engineering/docker_setup/README.md>
@@ -117,7 +117,7 @@ Additional resources
 - dbt with BigQuery on Docker<br>
     - <https://github.com/dbt-labs/dbt-bigquery/pkgs/container/dbt-bigquery>
 
-Steps accompished
+### Steps accompished
 
 1. Create [docker-compose.yml](./docker-compose.yml) file using the BigQuery image
 1. Created `profiles.yml` file in the `~/.dbt` directory using the following template <https://docs.getdbt.com/docs/core/connect-data-platform/bigquery-setup#service-account-file>
@@ -155,28 +155,28 @@ Steps accompished
 🎞️<https://youtu.be/ueVy2N54lyc?feature=shared>
 
 
+### General information
 
-
-Modual data modeling structure
+#### Modual data modeling structure
 
 1. Tables that we loaded (sources)
 1. Models that we build (transformations like cleaning, deduplication, etc.)
 
-Materializations in dbt Cloud
+#### Materializations in dbt Cloud
 
 - Ephemeral materializations (temporary, only exist for duration of a single dbt run)
 - View (virtual table, that can be queried like a table)
 - Table (physical table in the database)
 - Incremental materializations (efficient updates to existing tables, reducing the need for full data refreshes)
 
-`FROM` clause of a dbt model
+#### `FROM` clause of a dbt model
 
 - Sources - data loaded to our data warehouse
 - Seeds - CSV files in `seeds` directory
 - Ref - macro to reference underlying tables and views (dependencies are built automatically)
 
 
-Prerequsites
+### Prerequsites
 
 - 🎞️ <https://youtu.be/Mork172sK_c?feature=shared>
 - Use public dataset available in `BigQuery` <https://console.cloud.google.com/marketplace/product/city-of-new-york/nyc-tlc-trips>
@@ -239,7 +239,7 @@ Prerequsites
         Note: do not run all at once because of quota limitations, only run a few at one time.
 
 
-
+### Starting - defining the schema
 Go to dbt Cloud project in IDE
 
 - Open `dbt_project.yml` already prepared in the previous steps (alternative A)
@@ -264,7 +264,7 @@ Go to dbt Cloud project in IDE
 - Now run `dbt build` (command bar bottom left), but delete the `models/examples` folder as this will cause an error.
 
 
-Macros
+### Macros
 
 - Macros are `Jinja` code that can be reused, see <https://en.wikipedia.org/wiki/Jinja_(template_engine)>
 - Jinja delimiters:
@@ -292,17 +292,159 @@ Macros
 
     {%- endmacro %}
     ```
+### Packages
 
+- Comparable to libraries in other programming languages
+- Standalone dbt projects for specific problems
+- When adding a package to a project, all parts of the projects (models and macros) become part ot the project
+- Imported in `packages.yml` file and installed with `dbt deps` command
+- [dbt package hub](https://hub.getdbt.com/) list of useful packages
+- Creating a package (go to the IDE) and create a `packages.yml` file at the same level as `dbt_project.yml` and add the following content
+    ```yml
+    packages:
+      - package: dbt-labs/dbt_utils
+        version: 1.1.1
+    ```	
+    Run `dbt deps` in the command bar (bottom left) to install the package (will usually run automatically when the file is saved or at login). The command will also install the dependencies of the package. Installed packages will be located in the `dbt_packages` directory.
+    ```sql
+    -- Can be used similar to functions in python <package_name.function>
+    -- e.g. select statement of stg_green_tripdata.sql
+    select
+        {{ dbt_utils.surrogate_key(['vendorid', 'lpep_pickup_datetime']) }} as tripid,
+        cast(vendorid as integer) as vendorid,
+        -- ... other columns and rest of the query
+    ```
 
-<!-- TODO missing how to apply this a little bit before 24:00 in the video -->
+> **Note**:
+>
+> - In `BigQuery` click refresh on the database to see what has changed under `dbt_<username>`  
+>
+> - `Compile` can be used instead of `Build` to see how the SQL code will look like after the Jinja code has been processed without actually running the code.
+>
+> - Under the `target` directory in the `dbt` project it can be seen what has already been running. 
 
-Packages
+### Variables
 
-video < https://youtu.be/ueVy2N54lyc?list=PLaNLNpjZpzwgneiI-Gl8df8GCsPYp_6Bs&t=1501>
+- Variables can be used across the project
+- Variables can be used by using the `{{ var('...') }}` function
+- 2 options for defining variables
+    - `dbt_project.yml` file
+        ```yml
+        vars:
+            payment_type_values: [1, 2, 3, 4, 5, 6]
+        ```
+    - command line argument
+        ```bash
+        dbt build --m <your-model.sql> --var 'is_test_run: false'
+        ```
+        Will override the default value
+        ```sql
+        -- dbt build --m <your-model.sql> --var 'is_test_run: false'
+        {% if var('is_test_run', default=true) %}
 
+            limit 100
 
+        {% endif %}
+        ```
+        Multiple variables can be set at once using the `--vars` flag passing a dictionary of variables
+        ```bash
+        dbt run --vars '{ 'is_test_run': 'false' }'
+        ```
+> **Note**:
+>
+> - Useful to limit the number of rows in the development environment (cheaper and faster)
 
+### ?
 
+- Create folder `models/core`
+- Create a master data table
+    - Create file `models/core/dim_zones.sql`
+    - Using seeds mentioned before adding the CSV file `seeds/taxi_zone_lookup.csv` and `build`
+    - Adding the following to `seeds/seeds_properties.yml` (create it if it does not exist)
+        ```yml
+        version: 2
 
+        seeds: 
+        - name: taxi_zone_lookup
+            description: >
+            Taxi Zones roughly based on NYC Department of City Planning's Neighborhood
+            Tabulation Areas (NTAs) and are meant to approximate neighborhoods, so you can see which
+            neighborhood a passenger was picked up in, and which neighborhood they were dropped off in. 
+            Includes associated service_zone (EWR, Boro Zone, Yellow Zone)
+        ```
+    - Adding `models/core/dim_zones.sql`
+        ```sql
+        select 
+            locationid, 
+            borough, 
+            zone, 
+            replace(service_zone,'Boro','Green') as service_zone
+        from {{ ref('taxi_zone_lookup') }}
+        ```
+    - Adding ``models/core/fact_trips.sql (put yellow and green trips together), should be a table (more performant)
+        ```sql
+        {{
+            config(
+                materialized='table'
+            )
+        }}
+
+        with green_tripdata as (
+            select *, 
+                'Green' as service_type
+            from {{ ref('stg_green_tripdata') }}
+        ), 
+        yellow_tripdata as (
+            select *, 
+                'Yellow' as service_type
+            from {{ ref('stg_yellow_tripdata') }}
+        ), 
+        trips_unioned as (
+            select * from green_tripdata
+            union all 
+            select * from yellow_tripdata
+        ), 
+        dim_zones as (
+            select * from {{ ref('dim_zones') }}
+            where borough != 'Unknown'
+        )
+        select trips_unioned.tripid, 
+            trips_unioned.vendorid, 
+            trips_unioned.service_type,
+            trips_unioned.ratecodeid, 
+            trips_unioned.pickup_locationid, 
+            pickup_zone.borough as pickup_borough, 
+            pickup_zone.zone as pickup_zone, 
+            trips_unioned.dropoff_locationid,
+            dropoff_zone.borough as dropoff_borough, 
+            dropoff_zone.zone as dropoff_zone,  
+            trips_unioned.pickup_datetime, 
+            trips_unioned.dropoff_datetime, 
+            trips_unioned.store_and_fwd_flag, 
+            trips_unioned.passenger_count, 
+            trips_unioned.trip_distance, 
+            trips_unioned.trip_type, 
+            trips_unioned.fare_amount, 
+            trips_unioned.extra, 
+            trips_unioned.mta_tax, 
+            trips_unioned.tip_amount, 
+            trips_unioned.tolls_amount, 
+            trips_unioned.ehail_fee, 
+            trips_unioned.improvement_surcharge, 
+            trips_unioned.total_amount, 
+            trips_unioned.payment_type, 
+            trips_unioned.payment_type_description
+        from trips_unioned
+        inner join dim_zones as pickup_zone
+        on trips_unioned.pickup_locationid = pickup_zone.locationid
+        inner join dim_zones as dropoff_zone
+        on trips_unioned.dropoff_locationid = dropoff_zone.locationid
+        ```
+        Apply command `Build 🔽 > Build+model (Up/downsteam)
+
+⚠️ dbt build failed
+
+Video at 53:20
+https://youtu.be/ueVy2N54lyc?list=PLaNLNpjZpzwgneiI-Gl8df8GCsPYp_6Bs&t=3200
 
 ## 4.3.2 
